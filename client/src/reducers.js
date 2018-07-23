@@ -21,6 +21,9 @@ export const reducer = handleActions(
     defaultState
 );
 
+// Middleware method to post/get data from server
+// It runs anytime you dispatch an action with meta.async=true
+// Be aware the action gets called before and after the middleware so expect an empty data in the action
 export const asyncActionsMiddleware = store => next => action => {
     const isActionAsync = action.meta ? action.meta.async : false;
     if (!isActionAsync) {

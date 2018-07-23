@@ -1,5 +1,25 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import ReactTable from "react-table";
+import "react-table/react-table.css";
+import style from "./Users.css";
+
+const columns = [
+    {
+        Header: "Name",
+        accessor: "name"
+    },
+    {
+        Header: "",
+        accessor: "",
+        width: 70,
+        Cell: props => (
+            <button type="button" className={style.remove}>
+                -
+            </button>
+        )
+    }
+];
 
 class Users extends Component {
     componentDidMount() {
@@ -10,8 +30,26 @@ class Users extends Component {
         const { users, adduser } = this.props;
         return (
             <div>
-                <h1>List of users</h1>
-                <ul>{users.map(u => <li key={u._id}>{u.name}</li>)}</ul>
+                <div className="row" style={{ alignItems: "center" }}>
+                    <div className="col-1">
+                        <button type="button" className="btn btn-success">
+                            Add
+                        </button>
+                    </div>
+                    <div className="col-10">
+                        <h1>List of users</h1>
+                    </div>
+                    <div className="col-1" />
+                </div>
+                <ReactTable
+                    data={users}
+                    columns={columns}
+                    showPagination={false}
+                    style={{
+                        height: "400px"
+                    }}
+                    className="-striped -highlight"
+                />
                 <input
                     ref={e => {
                         this.input = e;
