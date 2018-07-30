@@ -1,5 +1,5 @@
 import { connect } from "react-redux";
-import { addshift, getshifts, removeshift, updateshift, showmodal, hidemodal } from "../../actions";
+import { addobject, getobjects, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
 import Shifts from "./Shifts";
 
 const mapStateToProps = state => ({
@@ -7,10 +7,10 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    addshift: shift => dispatch(addshift(shift)),
-    removeshift: id => dispatch(removeshift(id)),
-    getshifts: () => dispatch(getshifts()),
-    updateshift: (id, data) => dispatch(updateshift(id, data)),
+    addshift: shift => dispatch(addobject("shifts", shift)),
+    removeshift: id => dispatch(removeobject("shifts", id)),
+    getshifts: () => dispatch(getobjects("shifts")),
+    updateshift: (id, data) => dispatch(updateobject("shifts", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
 });

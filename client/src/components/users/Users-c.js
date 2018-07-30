@@ -1,5 +1,5 @@
 import { connect } from "react-redux";
-import { adduser, getusers, removeuser, updateuser, showmodal, hidemodal, getgroups } from "../../actions";
+import { getobjects, addobject, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
 import Users from "./Users";
 
 const mapStateToProps = state => ({
@@ -8,13 +8,13 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    adduser: user => dispatch(adduser(user)),
-    removeuser: id => dispatch(removeuser(id)),
-    getusers: () => dispatch(getusers()),
-    updateuser: (id, data) => dispatch(updateuser(id, data)),
+    adduser: user => dispatch(addobject("users", user)),
+    removeuser: id => dispatch(removeobject("users", id)),
+    getusers: () => dispatch(getobjects("users")),
+    updateuser: (id, data) => dispatch(updateobject("users", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
-    getgroups: () => dispatch(getgroups()),
+    getgroups: () => dispatch(getobjects("groups")),
 });
 
 export default connect(

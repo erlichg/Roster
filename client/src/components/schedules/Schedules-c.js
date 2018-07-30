@@ -1,16 +1,16 @@
 import { connect } from "react-redux";
 import { addobject, getobjects, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
-import Groups from "./Groups";
+import Schedules from "./Schedules";
 
 const mapStateToProps = state => ({
-    groups: state.groups,
+    schedules: state.schedules,
 });
 
 const mapDispatchToProps = dispatch => ({
-    addgroup: group => dispatch(addobject("groups", group)),
-    removegroup: id => dispatch(removeobject("groups", id)),
-    getgroups: () => dispatch(getobjects("groups")),
-    updategroup: (id, data) => dispatch(updateobject("groups", id, data)),
+    addschedule: schedule => dispatch(addobject("schedules", schedule)),
+    removeschedule: id => dispatch(removeobject("schedules", id)),
+    getschedules: () => dispatch(getobjects("schedules")),
+    updateschedule: (id, data) => dispatch(updateobject("schedules", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
 });
@@ -18,4 +18,4 @@ const mapDispatchToProps = dispatch => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(Groups);
+)(Schedules);

@@ -2,11 +2,13 @@ const mongoose = require("mongoose");
 const Groups = require("./Groups");
 const Users = require("./Users");
 const Shifts = require("./Shifts");
+const Schedules = require("./Schedules");
 
 const tables = {
     Users,
     Groups,
-    Shifts
+    Shifts,
+    Schedules
 };
 
 /**

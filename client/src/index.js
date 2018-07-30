@@ -13,6 +13,7 @@ const store = createStore(
     defaultState,
     applyMiddleware(asyncActionsMiddleware, reactTooltipMiddleWare)
 );
+
 ReactDOM.render(
     <Provider store={store}>
         <App />

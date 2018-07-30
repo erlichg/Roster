@@ -5,8 +5,6 @@
  */
 
 var app = require('../app');
-var serverapp = app.server;
-var clientapp = app.client;
 
 var debug = require('debug')('mern-redux-simple-template:server');
 var http = require('http');
@@ -16,32 +14,23 @@ var prod = process.env.env === "PRODUCTION";
  * Get port from environment and store in Express.
  */
 
-var serverport = normalizePort(process.env.PORT || '3001');
-serverapp.set('port', serverport);
-if (prod) {
-  var clientport = normalizePort('3000');
-  clientapp.set('port', clientport);
-}
+var port = normalizePort(process.env.PORT || '3001');
+app.set('port', port);
+
 /**
  * Create HTTP server and client.
  */
 
-var server = http.createServer(serverapp);
-if (prod) {
-  var client = http.createServer(clientapp);
-}
+var server = http.createServer(app);
+
 /**
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(serverport);
+server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-if (prod) {
-  client.listen(clientport);
-  client.on('error', onError);
-  client.on('listening', onListening);
-}
+
 /**
  * Normalize a port into a number, string, or false.
  */
@@ -71,9 +60,9 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof serverport === 'string'
-    ? 'Pipe ' + serverport
-    : 'Port ' + serverport;
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {

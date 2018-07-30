@@ -7,6 +7,7 @@ import Home from "./components/home/Home-c";
 import Users from "./components/users/Users-c";
 import Groups from "./components/groups/Groups-c";
 import Shifts from "./components/shifts/Shifts-c";
+import Schedules from "./components/schedules/Schedules-c";
 import Modal from "./components/modal/Modal-c";
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {fab} from '@fortawesome/free-brands-svg-icons';
@@ -28,6 +29,9 @@ class App extends Component {
                             </NavbarBrand>
                             <Nav navbar>
                                 <NavItem>
+                                    <NavLink tag={Link} to="/schedules">Schedules</NavLink>
+                                </NavItem>
+                                <NavItem>
                                     <NavLink tag={Link} to="/users">Users</NavLink>
                                 </NavItem>
                                 <NavItem>
@@ -45,6 +49,7 @@ class App extends Component {
                         <Route exact path="/users" component={Users}/>
                         <Route exact path="/groups" component={Groups}/>
                         <Route exact path="/shifts" component={Shifts}/>
+                        <Route exact path="/schedules" component={Schedules}/>
                         <Modal/>
                         <ReactTooltip/>
                     </div>

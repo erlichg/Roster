@@ -1,7 +1,7 @@
 const express = require("express");
 const db = require("../db/db");
 
-const table = "Shifts";
+const table = "Schedules";
 const router = express.Router();
 
 router.get("/", (req, res, next) => {

@@ -21,6 +21,10 @@ const ShiftSchema = new mongoose.Schema({
     },
     days: {
         type: [Number]
+    },
+    enabled: {
+        type: Boolean,
+        default: false
     }
 });
 ShiftSchema.methods.type = function type() {

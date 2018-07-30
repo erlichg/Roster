@@ -8,6 +8,7 @@ import Form from "../form/Form";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {Button, ButtonGroup} from 'reactstrap';
 import _ from 'lodash';
+import { Checkbox } from 'semantic-ui-react';
 
 const DAYS = [
     'Sunday',
@@ -54,6 +55,15 @@ class Shifts extends Component {
                         .value
                         .map(v => DAYS[v])
                         .join(', ');
+                }
+            }, {
+                Header: "Enabled",
+                accessor: "",
+                Cell: row => {
+                    const {_id, enabled} = row.value;
+                    return <Checkbox toggle defaultChecked={enabled} onChange={e=>{
+                        props.updateshift(_id, {enabled:!enabled});
+                    }}/>;
                 }
             }, {
                 Header: "",
