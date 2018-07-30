@@ -9,7 +9,12 @@ const passport = require("passport");
 const compression = require("compression");
 const mongodb = require("mongodb");
 const flash = require("flash");
+const mongoose = require("mongoose");
 const config = require("./config");
+const indexRouter = require("./routes/index");
+const usersRouter = require("./routes/users");
+const groupsRouter = require("./routes/groups");
+const shiftsRouter = require("./routes/Shifts");
 
 const app = express();
 
@@ -45,15 +50,14 @@ const auth = (req, res, next) => {
     return next();
 };
 clientapp.use(auth, express.static(path.join(__dirname, "client/build")));
+clientapp.get("*", (req, res) => {
+    res.sendFile(path.join(`${__dirname}/client/build/index.html`));
+});
 
-mongodb.MongoClient.connect(
+mongoose.connect(
     config.mongoURL,
     (err, client) => {
         if (err) throw err;
-
-        const db = client.db(config.db);
-        const indexRouter = require("./routes/index")(db);
-        const usersRouter = require("./routes/users")(db);
 
         app.use(logger("dev"));
         app.use(compression());
@@ -65,6 +69,8 @@ mongodb.MongoClient.connect(
 
         app.use("/api", indexRouter);
         app.use("/api/users", usersRouter);
+        app.use("/api/groups", groupsRouter);
+        app.use("/api/shifts", shiftsRouter);
 
         // catch 404 and forward to error handler
         app.use((req, res, next) => {

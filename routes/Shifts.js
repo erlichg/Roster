@@ -4,7 +4,7 @@ const db = require("../db/db");
 const router = express.Router();
 
 router.get("/", (req, res, next) => {
-    db.find("Users", {}, ["groups"])
+    db.find("Shifts")
         .then(users => res.json(users))
         .catch(err => {
             console.error(err);
@@ -12,7 +12,7 @@ router.get("/", (req, res, next) => {
         });
 });
 router.post("/", (req, res, next) => {
-    db.add("Users", req.body)
+    db.add("Shifts", req.body)
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
@@ -21,14 +21,14 @@ router.post("/", (req, res, next) => {
 });
 router.put("/:id", (req, res, next) => {
     const { id } = req.params;
-    db.updateById("Users", id, { $set: req.body }, ["groups"])
+    db.updateById("Shifts", id, { $set: req.body }, ["groups"])
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
             return res.status(505).send(`Failed to update object: ${err}`);
         });
 });
-router.delete("/:id", (req, res, next) => {
+router.delete("/:Shifts", (req, res, next) => {
     const { id } = req.params;
     db.removeById("Users", id)
         .then(u => res.json(u))

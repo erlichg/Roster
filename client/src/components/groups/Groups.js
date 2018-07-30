@@ -2,28 +2,16 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
-import {Dropdown} from "semantic-ui-react";
-import 'semantic-ui-css/semantic.min.css';
 import Form from "../form/Form";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 
-class Users extends Component {
+class Groups extends Component {
     constructor(props) {
         super(props);
         this.columns = [
             {
                 Header: "Name",
                 accessor: "name"
-            }, {
-                Header: "Email",
-                accessor: "email"
-            }, {
-                id: "groups",
-                Header: "Groups",
-                accessor: d => d
-                    .groups
-                    .map(g => g.name)
-                    .join(", ")
             }, {
                 Header: "",
                 accessor: "",
@@ -33,14 +21,14 @@ class Users extends Component {
                         <FontAwesomeIcon
                             icon="edit"
                             data-tip="Edit this item"
-                            onClick={() => this.addEditUser('Edit User', row.value)}/>
+                            onClick={() => this.addEditgroup('Edit group', row.value)}/>
                         <FontAwesomeIcon
                             icon="trash-alt"
                             data-tip="Remove this item"
                             onClick={() => {
                             props.showmodal({
-                                title: 'Remove user',
-                                message: 'Do you really want to remove the user?',
+                                title: 'Remove group',
+                                message: 'Do you really want to remove the group?',
                                 buttons: [
                                     {
                                         label: 'No',
@@ -48,7 +36,7 @@ class Users extends Component {
                                     }, {
                                         label: 'Yes',
                                         callback: () => {
-                                            props.removeuser(row.value._id);
+                                            props.removegroup(row.value._id);
                                             props.hidemodal();
                                         }
                                     }
@@ -64,16 +52,13 @@ class Users extends Component {
     componentDidMount() {
         this
             .props
-            .getusers();
-        this
-            .props
             .getgroups();
     }
 
     render() {
-        const {users} = this.props;
+        const {groups} = this.props;
         return (
-            <div id="Users">
+            <div id="groups">
                 <div
                     className="row"
                     style={{
@@ -83,17 +68,17 @@ class Users extends Component {
                         <button
                             type="button"
                             className="btn btn-success"
-                            onClick={() => this.addEditUser()}>
+                            onClick={() => this.addEditgroup()}>
                             Add
                         </button>
                     </div>
                     <div className="col-10">
-                        <h1>List of users</h1>
+                        <h1>List of groups</h1>
                     </div>
                     <div className="col-1"/>
                 </div>
                 <ReactTable
-                    data={users}
+                    data={groups}
                     columns={this.columns}
                     showPagination={false}
                     style={{
@@ -104,13 +89,13 @@ class Users extends Component {
         );
     }
 
-    addEditUser = (title = "New User", user = {}) => {
-        const {groups, adduser, updateuser, showmodal, hidemodal} = this.props;
+    addEditgroup = (title = "New group", group = {}) => {
+        const {addgroup, updategroup, showmodal, hidemodal} = this.props;
         showmodal({
             title, message: <Form ref={e => this.form = e}>
                 <div className={"form-group"}>
                     <label htmlFor={"name"}>
-                        User name
+                        group name
                     </label>
                     <input
                         id={"name"}
@@ -118,42 +103,8 @@ class Users extends Component {
                         required={true}
                         name={"name"}
                         type={"text"}
-                        defaultValue={user.name}
+                        defaultValue={group.name}
                         ref={e => this.name = e}/>
-                    <div className="invalid-feedback"/>
-                </div>
-                <div className={"form-group"}>
-                    <label htmlFor={"email"}>
-                        Email
-                    </label>
-                    <input
-                        id={"email"}
-                        className={"form-control"}
-                        required={true}
-                        name={"email"}
-                        type={"email"}
-                        defaultValue={user.email}
-                        ref={e => this.email = e}/>
-                    <div className="invalid-feedback"/>
-                </div>
-                <div className={"form-group"}>
-                    <label htmlFor={"groups"}>
-                        Groups
-                    </label>
-                    <Dropdown
-                        ref={e => this.groups = e}
-                        placeholder="Groups"
-                        fluid
-                        multiple
-                        selection
-                        defaultValue={user.groups
-                        ? user
-                            .groups
-                            .map(g => g._id)
-                        : []}
-                        options={groups.map(g => {
-                        return {key: g._id, text: g.name, value: g._id}
-                    })}/>
                     <div className="invalid-feedback"/>
                 </div>
             </Form>,
@@ -167,14 +118,12 @@ class Users extends Component {
                     className: 'btn-success',
                     callback: () => {
                         if (this.form.validate()) {
-                            if (Object.keys(user).length > 0) { //edit mode
-                                updateuser(user._id, {
+                            if (Object.keys(group).length > 0) { //edit mode
+                                updategroup(group._id, {
                                     name: this.name.value,
-                                    email: this.email.value,
-                                    groups: this.groups.state.value
                                 })
                             } else {
-                                adduser({name: this.name.value, email: this.email.value, groups: this.groups.state.value});
+                                addgroup({name: this.name.value});
                             }
                             hidemodal();
                         }
@@ -184,16 +133,14 @@ class Users extends Component {
         });
     }
 }
-Users.propTypes = {
-    users: PropTypes.array.isRequired,
-    getusers: PropTypes.func.isRequired,
-    adduser: PropTypes.func.isRequired,
-    removeuser: PropTypes.func.isRequired,
-    updateuser: PropTypes.func.isRequired,
+Groups.propTypes = {
+    groups: PropTypes.array.isRequired,
+    getgroups: PropTypes.func.isRequired,
+    addgroup: PropTypes.func.isRequired,
+    removegroup: PropTypes.func.isRequired,
+    updategroup: PropTypes.func.isRequired,
     showmodal: PropTypes.func.isRequired,
     hidemodal: PropTypes.func.isRequired,
-    groups: PropTypes.array.isRequired,
-    getgroups: PropTypes.func.isRequired
 };
 
-export default Users;
+export default Groups;

@@ -5,13 +5,13 @@ import { Provider } from "react-redux";
 import { createStore, applyMiddleware } from "redux";
 import App from "./App";
 // import registerServiceWorker from "./registerServiceWorker";
-import { reducer, defaultState, asyncActionsMiddleware } from "./reducers";
+import { reducer, defaultState, asyncActionsMiddleware, reactTooltipMiddleWare } from "./reducers";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const store = createStore(
     reducer,
     defaultState,
-    applyMiddleware(asyncActionsMiddleware)
+    applyMiddleware(asyncActionsMiddleware, reactTooltipMiddleWare)
 );
 ReactDOM.render(
     <Provider store={store}>

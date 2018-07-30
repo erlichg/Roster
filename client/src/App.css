@@ -26,3 +26,21 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Global classes for use in entire project */
+
+.remove {
+  padding: 0 !important;
+  line-height: 20px !important;
+  width: 20px !important;
+  border-radius: 50% !important;
+}
+
+.rt-noData {
+  z-index: 0 !important;
+}
+
+.buttons * {
+  margin: 10px;
+  cursor: pointer;
+}

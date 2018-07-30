@@ -1,22 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-const Home = ({ counter, increment, decrement }) => (
+const Home = ({ }) => (
     <div>
-        <label>{counter}</label>
-        <button type="button" onClick={increment}>
-            +
-        </button>
-        <button type="button" onClick={decrement}>
-            -
-        </button>
+        <h1>Hello world</h1>
     </div>
 );
 
 Home.propTypes = {
-    counter: PropTypes.number.isRequired,
-    increment: PropTypes.func.isRequired,
-    decrement: PropTypes.func.isRequired
+    
 };
 
 export default Home;
