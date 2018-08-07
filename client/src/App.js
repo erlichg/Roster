@@ -8,13 +8,14 @@ import Users from "./components/users/Users-c";
 import Groups from "./components/groups/Groups-c";
 import Shifts from "./components/shifts/Shifts-c";
 import Schedules from "./components/schedules/Schedules-c";
+import Profile from "./components/profiles/Profile-c";
 import Modal from "./components/modal/Modal-c";
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {fab} from '@fortawesome/free-brands-svg-icons';
-import {faTrashAlt, faEdit} from '@fortawesome/free-solid-svg-icons';
-import ReactTooltip from 'react-tooltip'
+import {faTrashAlt, faEdit, faEllipsisV} from '@fortawesome/free-solid-svg-icons';
+import ReactTooltip from 'react-tooltip';
 
-library.add(fab, faEdit, faTrashAlt)
+library.add(fab, faEdit, faTrashAlt, faEllipsisV)
 
 class App extends Component {
     render() {
@@ -50,8 +51,9 @@ class App extends Component {
                         <Route exact path="/groups" component={Groups}/>
                         <Route exact path="/shifts" component={Shifts}/>
                         <Route exact path="/schedules" component={Schedules}/>
+                        <Route exact path="/profile" component={Profile}/>
                         <Modal/>
-                        <ReactTooltip/>
+                        <ReactTooltip effect="solid"/>
                     </div>
                 </div>
             </Router>

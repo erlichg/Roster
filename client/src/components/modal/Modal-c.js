@@ -1,6 +1,6 @@
 import { connect } from "react-redux";
 import {hidemodal} from "../../actions";
-import Modal from "./Modal";
+import Modal from "./Modal.1";
 
 const mapStateToProps = state => ({modal: state.modal, modaloptions: state.modaloptions});
 

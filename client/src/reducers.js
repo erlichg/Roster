@@ -7,6 +7,7 @@ import {
     updateobject,
     showmodal,
     hidemodal,
+    setholidays,
 } from "./actions";
 
 export const defaultState = {
@@ -17,6 +18,7 @@ export const defaultState = {
     schedules: [],
     modal: false,
     modaloptions: {},
+    holidays: {},
 };
 
 export const reducer = handleActions({
@@ -54,15 +56,19 @@ export const reducer = handleActions({
                     : o)
             : state[action.payload.type]
     }),
-    [showmodal]: (state, payload) => ({
+    [showmodal]: (state, action) => ({
         ...state,
         modal: true,
-        modaloptions: payload.payload
+        modaloptions: action.payload
     }),
     [hidemodal]: state => ({
         ...state,
         modal: false
     }),
+    [setholidays]: (state, action) => ({
+        ...state,
+        holidays: action.payload
+    })
 }, defaultState);
 
 // Middleware method to post/get data from server It runs anytime you dispatch
@@ -105,6 +111,7 @@ export const asyncActionsMiddleware = store => next => action => {
 };
 
 export const reactTooltipMiddleWare = store => next => action => {
+    const ans = next(action);
     ReactTooltip.rebuild();
-    return next(action);
+    return ans;
 }

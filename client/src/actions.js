@@ -6,7 +6,8 @@ export const {
     removeobject,
     updateobject,
     showmodal,
-    hidemodal
+    hidemodal,
+    setholidays,
 } = createActions({
     GETOBJECTS: type => ({
         type,
@@ -40,5 +41,6 @@ export const {
         message: '',
         ...modaloptions
     }),
-    HIDEMODAL: () => ({})
+    HIDEMODAL: () => ({}),
+    SETHOLIDAYS: holidays => holidays,
 });

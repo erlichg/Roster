@@ -25,6 +25,14 @@ const ShiftSchema = new mongoose.Schema({
     enabled: {
         type: Boolean,
         default: false
+    },
+    color: {
+        type: String,
+        default: "#000"
+    },
+    group: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
     }
 });
 ShiftSchema.methods.type = function type() {

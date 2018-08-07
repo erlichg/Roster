@@ -8,9 +8,10 @@ import Form from "../form/Form";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {Button, ButtonGroup} from 'reactstrap';
 import _ from 'lodash';
-import { Checkbox } from 'semantic-ui-react';
+import {Checkbox} from 'semantic-ui-react';
+import {HuePicker} from 'react-color';
 
-const DAYS = [
+export const DAYS = [
     'Sunday',
     'Monday',
     'Tuesday',
@@ -57,13 +58,32 @@ class Shifts extends Component {
                         .join(', ');
                 }
             }, {
+                Header: "Group",
+                accessor: "group.name",
+            },{
                 Header: "Enabled",
                 accessor: "",
                 Cell: row => {
                     const {_id, enabled} = row.value;
-                    return <Checkbox toggle defaultChecked={enabled} onChange={e=>{
-                        props.updateshift(_id, {enabled:!enabled});
+                    return <Checkbox
+                        toggle
+                        defaultChecked={enabled}
+                        onChange={e => {
+                        props.updateshift(_id, {
+                            enabled: !enabled
+                        });
                     }}/>;
+                }
+            }, {
+                Header: "Color",
+                accessor: "",
+                Cell: row => {
+                    const {_id, color} = row.value;
+                    return <HuePicker
+                        color={color}
+                        onChangeComplete={c => {
+                        props.updateshift(_id, {color: c.hex})
+                    }}/>
                 }
             }, {
                 Header: "",
@@ -106,6 +126,9 @@ class Shifts extends Component {
         this
             .props
             .getshifts();
+        this
+            .props
+            .getgroups();
     }
 
     render() {
@@ -143,8 +166,10 @@ class Shifts extends Component {
     }
 
     addEditShift = (title = "New Shift", shift = {}) => {
-        const {addshift, updateshift, showmodal, hidemodal} = this.props;
-        let daysValue = shift.days ? 4 : undefined;
+        const {addshift, updateshift, showmodal, hidemodal, groups} = this.props;
+        let daysValue = shift.days
+            ? 4
+            : undefined;
         if (_.isEqual(shift.days, WEEK)) {
             daysValue = 1;
         }
@@ -198,11 +223,12 @@ class Shifts extends Component {
                             <div className="invalid-feedback"/>
                         </div>
                         <div className={"form-group"}>
-                            <label htmlFor={"groups"}>
-                                Groups
+                            <label htmlFor={"days"}>
+                                Days
                             </label>
                             <div>
                                 <Dropdown
+                                    id="days"
                                     ref={e => this.days = e}
                                     placeholder="Days"
                                     fluid
@@ -247,6 +273,25 @@ class Shifts extends Component {
                             </div>
                             <div className="invalid-feedback"/>
                         </div>
+                        <div className={"form-group"}>
+                            <label htmlFor={"group"}>
+                                User Group
+                            </label>
+                            <Dropdown
+                                ref={e => this.group = e}
+                                id="group"
+                                placeholder="Group"
+                                fluid
+                                selection
+                                defaultValue={shift.group
+                                ? shift
+                                    .group._id
+                                : undefined}
+                                options={groups.map(g => {
+                                return {key: g._id, text: g.name, value: g._id}
+                            })}/>
+                            <div className="invalid-feedback"/>
+                        </div>
                     </Form>
                 );
             },
@@ -271,10 +316,11 @@ class Shifts extends Component {
                             if (Object.keys(shift).length > 0) {/*edit mode*/
                                 updateshift(shift._id, {
                                     name: this.name.value,
-                                    days
+                                    days,
+                                    group: this.group.state.value
                                 })
                             } else {
-                                addshift({name: this.name.value, days});
+                                addshift({name: this.name.value, days, group: this.group.state.value});
                             }
                             hidemodal();
                         }
@@ -291,7 +337,9 @@ Shifts.propTypes = {
     removeshift: PropTypes.func.isRequired,
     updateshift: PropTypes.func.isRequired,
     showmodal: PropTypes.func.isRequired,
-    hidemodal: PropTypes.func.isRequired
+    hidemodal: PropTypes.func.isRequired,
+    groups: PropTypes.array.isRequired,
+    getgroups: PropTypes.func.isRequired
 }
 
 export default Shifts;

@@ -1,0 +1,49 @@
+#schedules #calendar{
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 85%;
+}
+
+#schedules #calendar .header {
+    flex-basis: 14%; /* seven per row */
+}
+
+#schedules {
+    display: flex;
+    justify-content: space-between;
+}
+
+#schedules #users {
+    flex-basis: 10%;
+}
+
+#schedules #users ul {
+    list-style: none;
+}
+
+#schedules #users li {
+    display: flex;
+    justify-content: space-between;
+}
+
+#schedules #users li.dragging{
+    border: 1px dashed black;
+    border-radius: 4px;
+}
+
+#schedules #users li.notdragging {
+    border: 1px solid black;
+    border-radius: 4px;
+}
+#schedules #users .userschedulecontainer {
+    margin-left: auto;
+}
+
+#schedules #users .userschedule {
+    display: inline-block;
+    width: 10px;
+    height: 20px;   
+    margin-right: 5px;
+    vertical-align: middle;
+    border-radius: 4px;
+}

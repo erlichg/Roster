@@ -7,6 +7,8 @@ import App from "./App";
 // import registerServiceWorker from "./registerServiceWorker";
 import { reducer, defaultState, asyncActionsMiddleware, reactTooltipMiddleWare } from "./reducers";
 import "bootstrap/dist/css/bootstrap.min.css";
+import {getholidays} from "./init";
+import {setholidays} from "./actions";
 
 const store = createStore(
     reducer,
@@ -21,3 +23,8 @@ ReactDOM.render(
     document.getElementById("root")
 );
 // registerServiceWorker();
+
+getholidays()
+.then(h=>{
+    store.dispatch(setholidays(h));
+})

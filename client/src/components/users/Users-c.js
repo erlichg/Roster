@@ -1,4 +1,5 @@
 import { connect } from "react-redux";
+import { withRouter } from 'react-router';
 import { getobjects, addobject, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
 import Users from "./Users";
 
@@ -17,7 +18,7 @@ const mapDispatchToProps = dispatch => ({
     getgroups: () => dispatch(getobjects("groups")),
 });
 
-export default connect(
+export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps
-)(Users);
+)(Users));

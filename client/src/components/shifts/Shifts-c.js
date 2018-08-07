@@ -4,6 +4,7 @@ import Shifts from "./Shifts";
 
 const mapStateToProps = state => ({
     shifts: state.shifts,
+    groups: state.groups,
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -13,6 +14,7 @@ const mapDispatchToProps = dispatch => ({
     updateshift: (id, data) => dispatch(updateobject("shifts", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
+    getgroups: () => dispatch(getobjects("groups")),
 });
 
 export default connect(

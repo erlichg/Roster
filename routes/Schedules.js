@@ -5,7 +5,7 @@ const table = "Schedules";
 const router = express.Router();
 
 router.get("/", (req, res, next) => {
-    db.find(table)
+    db.find(table, {}, ["shift", "user"])
         .then(users => res.json(users))
         .catch(err => {
             console.error(err);
@@ -13,7 +13,7 @@ router.get("/", (req, res, next) => {
         });
 });
 router.post("/", (req, res, next) => {
-    db.add(table, req.body)
+    db.add(table, req.body, ["shift", "user"])
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
@@ -22,14 +22,14 @@ router.post("/", (req, res, next) => {
 });
 router.put("/:id", (req, res, next) => {
     const { id } = req.params;
-    db.updateById(table, id, { $set: req.body })
+    db.updateById(table, id, { $set: req.body }, ["shift", "user"])
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
             return res.status(505).send(`Failed to update object: ${err}`);
         });
 });
-router.delete("/:Shifts", (req, res, next) => {
+router.delete("/:id", (req, res, next) => {
     const { id } = req.params;
     db.removeById(table, id)
         .then(u => res.json(u))

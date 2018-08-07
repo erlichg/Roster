@@ -42,7 +42,9 @@ const findById = (collection, id, populate = []) =>
     new Promise((resolve, reject) => {
         find(
             collection,
-            { _id: typeof id === "string" ? mongoose.Types.ObjectId(id) : id },
+            {
+                _id: typeof id === "string" ? mongoose.Types.ObjectId(id) : id
+            },
             populate
         )
             .then(objs => resolve(objs[0]))
@@ -84,7 +86,9 @@ const updateById = (collection, id, update, populate) =>
 const removeById = (collection, id) =>
     new Promise((resolve, reject) => {
         tables[collection].deleteOne(
-            { _id: typeof id === "string" ? mongoose.Types.ObjectId(id) : id },
+            {
+                _id: typeof id === "string" ? mongoose.Types.ObjectId(id) : id
+            },
             err => {
                 if (err) {
                     console.error(err);
@@ -98,16 +102,18 @@ const removeById = (collection, id) =>
 /**
  * Add new object to DB
  * @param {string} collection - The collection
- * @param {any} obj - The object to add
+ * @param {any} data - The object to add
  */
-const add = (collection, obj) =>
+const add = (collection, data, populate) =>
     new Promise((resolve, reject) => {
-        new tables[collection](obj).save((err, o) => {
+        new tables[collection](data).save((err, o) => {
             if (err) {
                 console.error(err);
                 reject(err);
             }
-            resolve(o);
+            findById(collection, o._id, populate)
+                .then(obj => resolve(obj))
+                .catch(errr => reject(errr));
         });
     });
 

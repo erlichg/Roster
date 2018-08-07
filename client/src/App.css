@@ -35,12 +35,6 @@
   width: 20px !important;
   border-radius: 50% !important;
 }
-
-.rt-noData {
-  z-index: 0 !important;
-}
-
-.buttons * {
-  margin: 10px;
-  cursor: pointer;
+.rt-td {
+  overflow: inherit !important;
 }

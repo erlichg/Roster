@@ -1,0 +1,36 @@
+.dayshift {
+    display: block;
+    margin: 2px;
+    position: relative;
+}
+
+.dayshift.shift {
+    background-color: lightgreen;
+}
+
+.dayshift.noshift {
+    background-color: lightgray;
+}
+
+.dayshift .delete {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    cursor: pointer;
+}
+
+.dayshift.hover {
+    box-shadow: 0 0 3pt 2pt lightblue;
+}
+
+.dayshift.hover.cantdrop {
+    box-shadow: 0 0 3pt 2pt red;
+}
+
+.dayshift:not(.hover).candrop {
+    box-shadow: 0 0 3pt 2pt yellow;
+}
+
+.dayshift.hover.candrop {
+    box-shadow: 0 0 3pt 2pt green;
+}

@@ -9,6 +9,10 @@ const ScheduleSchema = new mongoose.Schema({
     shift: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Shift"
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
     }
 });
 const Schedules = mongoose.model("Schedule", ScheduleSchema);
