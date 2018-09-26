@@ -12,6 +12,7 @@ const flash = require("flash");
 const mongoose = require("mongoose");
 const config = require("./config");
 const loginRouter = require("./routes/login");
+const logoutRouter = require("./routes/logout");
 const indexRouter = require("./routes");
 const usersRouter = require("./routes/users");
 const groupsRouter = require("./routes/groups");
@@ -47,6 +48,7 @@ passport.deserializeUser((user, done) => {
 });
 
 app.use("/login", loginRouter);
+app.use("/logout", logoutRouter);
 app.use("/api", indexRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/groups", groupsRouter);
