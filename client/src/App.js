@@ -39,7 +39,7 @@ class App extends Component {
                 <div className="App">
                     <header className="App-header">
                         <Menu secondary inverted>
-                            <Menu.Item as={Nav} to={'/home'}>
+                            <Menu.Item as={Nav} to={'/'}>
                                 <img src={logo} className="App-logo" alt="logo"/>XtremIO Roster
                             </Menu.Item>
                             {["schedules", "constraints", "users", "groups", "shifts"].map(s => <Menu.Item key={s} name={s} as={Nav} to={`/${s}`}/>)}
@@ -73,7 +73,7 @@ class App extends Component {
                     </header>
 
                     <div className="container-fluid">
-                        <Route exact path="/home" component={Home}/>
+                        <Route exact path="/" component={Home}/>
                         <Route exact path="/users" component={onlyAdmin(Users)}/>
                         <Route exact path="/groups" component={onlyAdmin(Groups)}/>
                         <Route exact path="/shifts" component={onlyAdmin(Shifts)}/>
