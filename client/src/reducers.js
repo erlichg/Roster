@@ -10,6 +10,7 @@ import {
     hidemodal,
     setholidays,
     setuser,
+    getuser,
     getevents,
     addevent,
     removeevent,
@@ -31,18 +32,19 @@ export const defaultState = {
     modaloptions: {},
     holidays: {},
     events: {},
-    user: {
-        "_id": "5b6c2470ce291463400b05d7",
-        "name": "Guy",
-        "email": "guy.erlich@emc.com",
-        "groups": [],
-        "constraints": [],
-        "__v": 0,
-        "role": {
-            "_id": "5b6c2b122822f30edba70bca",
-            "name": "Admin"
-        }
-    },
+    user: undefined,
+    // {
+    //     "_id": "5b6c2470ce291463400b05d7",
+    //     "name": "Guy",
+    //     "email": "guy.erlich@emc.com",
+    //     "groups": [],
+    //     "constraints": [],
+    //     "__v": 0,
+    //     "role": {
+    //         "_id": "5b6c2b122822f30edba70bca",
+    //         "name": "Admin"
+    //     }
+    // },
     roles: [],
     moment: moment(),
     constraints: [],
@@ -109,6 +111,10 @@ export const reducer = handleActions({
         user: state
             .users
             .filter(u => u.name === action.payload)[0] || state.user
+    }),
+    [getuser]: (state, action) => ({
+        ...state,
+        user: action.success ? action.result : state.user
     }),
     [getevents]: (state, action) => ({
         ...state,

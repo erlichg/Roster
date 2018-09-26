@@ -8,7 +8,7 @@ import App from "./App";
 import {reducer, defaultState, asyncActionsMiddleware, reactTooltipMiddleWare} from "./reducers";
 import "bootstrap/dist/css/bootstrap.min.css";
 import getholidays from "./holidays";
-import {setholidays, getevents, getobjects, getconstrainttypes} from "./actions";
+import {setholidays, getevents, getobjects, getconstrainttypes, getuser} from "./actions";
 
 const store = createStore(reducer, defaultState, applyMiddleware(asyncActionsMiddleware, reactTooltipMiddleWare));
 
@@ -18,6 +18,7 @@ ReactDOM.render(
 </Provider>, document.getElementById("root"));
 // registerServiceWorker();
 
+store.dispatch(getuser());
 store.dispatch(getevents());
 store.dispatch(getobjects("shifts"));
 store.dispatch(getobjects("schedules"));

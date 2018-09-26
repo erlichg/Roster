@@ -32,6 +32,9 @@ class App extends Component {
 
     render() {
         const {user, isadmin, error, dismisserror, messages} = this.props;
+        if (!user) {
+            return <h1>Your user does not seem to be registered in the application. Please contact the admin</h1>
+        }
         const onlyAdmin = comp => isadmin ? comp : props => <label>You don't have permission to view this page</label>;
         const unread = messages.filter(m=>!m.read && m.to._id.toString()===user._id.toString()).length;
         return (
@@ -91,7 +94,7 @@ class App extends Component {
 }
 const mapStateToProps = state => ({
     user: state.user,
-    isadmin: state.user.role.name === 'Admin',
+    isadmin: state.user && state.user.role.name === 'Admin',
     error: state.error,
     messages: state.messages,
 });

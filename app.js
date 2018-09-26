@@ -22,6 +22,7 @@ const EventsRouter = require("./routes/Events");
 const RolesRouter = require("./routes/roles");
 const ConstraintsRouter = require("./routes/constraints");
 const MessagesRouter = require("./routes/Messages");
+const db = require("./db/db");
 
 const app = express();
 
@@ -49,6 +50,23 @@ passport.deserializeUser((user, done) => {
 
 app.use("/login", loginRouter);
 app.use("/logout", logoutRouter);
+app.use("/loggeduser", (req, res) => {
+    if (req.isAuthenticated()) {
+        const { user } = req;
+        db.find("Users", { email: user.mail.toLowerCase() }, [
+            "groups",
+            "role"
+        ]).then(users => {
+            if (users.length === 1) {
+                res.json(users[0]);
+            } else {
+                res.status(500).end();
+            }
+        });
+    } else {
+        res.status(500).end();
+    }
+});
 app.use("/api", indexRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/groups", groupsRouter);

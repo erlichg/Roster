@@ -10,6 +10,7 @@ export const {
     hidemodal,
     setholidays,
     setuser,
+    getuser,
     getevents,
     addevent,
     removeevent,
@@ -55,6 +56,11 @@ export const {
     HIDEMODAL: () => ({}),
     SETHOLIDAYS: holidays => holidays,
     SETUSER: user => user,
+    GETUSER: () => ({
+        async: true,
+        url: "/loggeduser",
+        method: "get"
+    }),
     GETEVENTS: () => ({
         type: "events",
         async: true,
