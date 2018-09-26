@@ -1,0 +1,17 @@
+.daybutton {
+    background-color: lightgray !important;
+    color: rgba(0, 0, 0, .6) !important;
+}
+
+.daybutton.active {
+    background-color: gray !important;
+    color: rgba(0, 0, 0, .6) !important;
+}
+
+.daybutton:hover {
+    color: rgba(0, 0, 0, .6) !important;
+}
+
+.daybutton:focus {
+    color: rgba(0, 0, 0, .6) !important;
+}

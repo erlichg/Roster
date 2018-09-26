@@ -1,0 +1,19 @@
+.dayevent {
+    position: relative;
+}
+
+.dayevent * {
+    display: block;
+}
+
+.dayevent .delete {
+    visibility: hidden;
+    position: absolute;
+    right: 1px;
+    top: 3px;
+    cursor: pointer;
+    z-index: 1;
+}
+.dayevent:hover .delete {
+    visibility: visible;
+}

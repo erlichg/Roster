@@ -1,0 +1,24 @@
+#calendar{
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+#calendar .header {
+    flex-basis: 14.28%; /* seven per row */
+}
+
+#calendar .arrowdiv .chevron {
+    visibility: hidden;
+}
+
+#calendar .arrowdiv:hover .chevron{
+    visibility: visible;
+}
+
+.calendartop {
+    margin: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}

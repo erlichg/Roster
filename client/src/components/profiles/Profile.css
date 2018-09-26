@@ -1,0 +1,9 @@
+#profile #calendar{
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 85%;
+}
+
+#profile #calendar .header {
+    flex-basis: 14%; /* seven per row */
+}
