@@ -61,7 +61,7 @@ class App extends Component {
                                         <Input ref={e=>this.user=e} action={{ content: 'Change', onClick: this.changeUser }} placeholder='User name' />
                                     </Dropdown.Item>
                                     <Dropdown.Divider/>
-                                    <Dropdown.Item as={Nav} to={'/logout'}>Logout</Dropdown.Item>
+                                    <Dropdown.Item href={'/logout'}>Logout</Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
                             </Menu.Menu>
