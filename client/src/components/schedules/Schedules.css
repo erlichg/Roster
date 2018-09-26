@@ -1,13 +1,3 @@
-#schedules #calendar{
-    display: flex;
-    flex-wrap: wrap;
-    flex-basis: 85%;
-}
-
-#schedules #calendar .header {
-    flex-basis: 14%; /* seven per row */
-}
-
 #schedules {
     display: flex;
     justify-content: space-between;
@@ -46,4 +36,34 @@
     margin-right: 5px;
     vertical-align: middle;
     border-radius: 4px;
+}
+
+#schedules .calendar {
+    flex-basis: 85%;
+}
+
+#schedules .item.ok {
+    background-color: aquamarine;
+}
+
+#schedules .item.Info {
+    background-color: aliceblue;
+}
+
+#schedules .item.Warning {
+    background-color: lightyellow;
+}
+
+#schedules .item.Error {
+    background-color: lightcoral;
+}
+
+#schedules #actions .button {
+    width: 100%;
+    height: 50px;
+    margin: 10px;
+}
+
+#schedules .dimmer {
+    position: fixed;
 }

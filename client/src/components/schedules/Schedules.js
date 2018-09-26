@@ -2,69 +2,66 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import Moment from 'moment';
 import {extendMoment} from 'moment-range';
+import {List, Button, Dimmer, Loader} from 'semantic-ui-react';
+import _ from "lodash";
 import "./Schedules.css";
-import {DAYS} from "../shifts/Shifts";
 import {DragDropContext} from 'react-dnd';
-import HTML5Backend, {NativeTypes} from 'react-dnd-html5-backend';
+import HTML5Backend from 'react-dnd-html5-backend';
 import _Draggable from "../dragndrop/Draggable";
-import Day from "../day/Day";
+import Calendar from "../calendar/Calendar-c";
 
 const Draggable = _Draggable("user");
-const moment = extendMoment(Moment);
-
-const VIEWS = {
-    month: () => ({
-        start: moment().startOf('week'),
-        end: moment()
-            .startOf('week')
-            .add(4, 'week')
-    }),
-    week: () => ({
-        start: moment().startOf('week'),
-        end: moment()
-            .startOf('week')
-            .add(7, 'day')
-    })
-}
+const _moment = extendMoment(Moment);
 
 class Schedules extends Component {
-
-    state = {
-        view: VIEWS.month()
-    };
 
     componentDidMount() {
         this
             .props
-            .getschedules();
-        this
-            .props
-            .getshifts();
-        this
-            .props
-            .getusers();
-        this
-            .props
-            .getgroups();
+            .getconstraints();
+    }
+
+    componentDidUpdate() {
+        const {constraints, constraintsresults, checkconstraint} = this.props;
+        constraints
+            .filter(c => c.enabled && !constraintsresults[c._id])
+            .forEach(c => checkconstraint(c._id));
     }
 
     render() {
-        const {schedules, shifts, users, holidays, groups} = this.props;
-        const enabled_shifts = shifts.filter(s => s.enabled);
-        const range = Array.from(moment.range(this.state.view.start, this.state.view.end).by('day', {excludeEnd: true}));
-        const weeks = Array
-            .from(moment.range(this.state.view.start, this.state.view.end).by('week', {excludeEnd: true}))
-            .map(m => m.week());
-        const weekschedules = schedules.filter(s => weeks.indexOf(s.week !== -1));
+        const {
+            schedules,
+            potentialschedules,
+            users,
+            groups,
+            user,
+            moment,
+            constraintsresults,
+            constraints,
+            autopopulate,
+            clearpotentialschedules,
+            applypotentialschedules,
+            busy,
+        } = this.props;
+        const weeks = _.range(
+            _moment(moment)
+                .startOf("month")
+                .week(),
+            _moment(moment)
+                .endOf("month")
+                .week() + 1
+        );
+        const weekschedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && weeks.indexOf(s.week) !== -1 && s.year === moment.year());
         return (
             <div id="schedules">
+            <Dimmer active={busy}><Loader/></Dimmer>
                 <div id="users">
                     <h3>User list</h3>
                     {groups.map(g => <div key={g._id}>
                         <h5>{g.name}</h5>
                         <ul>
                             {users.filter(u => u.groups.map(g => g._id).indexOf(g._id) !== -1).map(u => (
-                                <Draggable type="user" key={u._id} data={u}>
+                                <Draggable key={u._id} data={u}>
                                     {isDragging => (
                                         <li
                                             className={isDragging
@@ -79,10 +76,8 @@ class Schedules extends Component {
                                             <div className="userschedulecontainer">
                                                 {weekschedules
                                                     .filter(s => s.user._id === u._id)
-                                                    .map(s =>< span key = {
-                                                        s._id
-                                                    }
-                                                    className = "userschedule" style = {{backgroundColor: s.shift.color}} > </span>)}
+                                                    .map(s =>_.range(0,s.shift.weight).map((t,i)=><span key={i}
+                                                    className = "userschedule" style = {{backgroundColor: s.shift.color}}/>))}
                                             </div>
                                         </li>
                                     )}
@@ -90,15 +85,74 @@ class Schedules extends Component {
                             ))}
                         </ul>
                     </div>)}
+                    <h4>Constraints</h4>
+                    <List>
+                        {constraints.map(c => {
+                            const className = (c.enabled
+                                ? ""
+                                : "disabled") + (constraintsresults[c._id]
+                                ? constraintsresults[c._id].status === 0
+                                    ? " ok"
+                                    : (" " + c.severity)
+                                : " loading");
+                            let icon = "";
+                            let tooltip;
+                            if (c.enabled) {
+                                if (!constraintsresults[c._id]) {
+                                    icon = "spinner";
+                                    tooltip = "Loading...";
+                                } else {
+                                    if (constraintsresults[c._id].status === 0) {
+                                        icon = "check circle";
+                                        tooltip = "Constraint is OK";
+                                    } else {
+                                        switch (c.severity) {
+                                            case "Info":
+                                                icon = "info circle";
+                                                break;
+                                            case "Warning":
+                                                icon = "exclamation circle";
+                                                break;
+                                            case "Error":
+                                                icon = "times circle";
+                                                break;
+                                            default:
+                                                break;
+                                        };
+                                        tooltip = `${c.severity}: ${constraintsresults[c._id].error}`;
+                                    }
+                                }
+                            }
+
+                            return (
+                                <List.Item
+                                    key={c._id}
+                                    data-html={true}
+                                    data-tip={tooltip}
+                                    className={className}>
+                                    <List.Icon name={icon}/>
+                                    <List.Content>{c.name}</List.Content>
+                                </List.Item>
+                            );
+                        })}
+                    </List>
+                    <div id="actions">
+                    <h4>Actions</h4>
+                    <Button onClick={autopopulate}>Auto arrange</Button>
+                    {potentialschedules.length>0
+                        ? [
+                        <Button negative key="revert" onClick={clearpotentialschedules}>Revert</Button>,
+                        <Button positive key="apply" onClick={() => applypotentialschedules(potentialschedules)}>Apply</Button>
+                        ]
+                        : null}
+                    </div>
                 </div>
-                <div id="calendar">
-                    {DAYS.map(d => <label className="header" key={d}>{d}</label>)}
-                    {range.map(m => (<Day
-                        key={m}
-                        moment={m}
-                        holidays={holidays[m] || []}
-                        schedules={schedules.filter(s => s.week === m.week())}
-                        shifts={enabled_shifts.filter(s => s.days.indexOf(m.day()) >= 0)}/>))}
+                <div className="calendar">
+                    <Calendar
+                        user={user}
+                        allowedactions={{
+                        addevent: false
+                    }}/>
                 </div>
             </div>
         );
@@ -106,20 +160,19 @@ class Schedules extends Component {
 }
 Schedules.propTypes = {
     schedules: PropTypes.array.isRequired,
-    getschedules: PropTypes.func.isRequired,
-    addschedule: PropTypes.func.isRequired,
-    removeschedule: PropTypes.func.isRequired,
-    updateschedule: PropTypes.func.isRequired,
-    showmodal: PropTypes.func.isRequired,
-    hidemodal: PropTypes.func.isRequired,
-    getshifts: PropTypes.func.isRequired,
+    potentialschedules: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
-    holidays: PropTypes.object.isRequired,
-    groups: PropTypes.array.isRequired
-};
-
-export const ItemTypes = {
-    USER: 'user'
+    groups: PropTypes.array.isRequired,
+    user: PropTypes.object.isRequired,
+    moment: PropTypes.any.isRequired,
+    constraints: PropTypes.array.isRequired,
+    constraintsresults: PropTypes.object.isRequired,
+    checkconstraint: PropTypes.func.isRequired,
+    getconstraints: PropTypes.func.isRequired,
+    autopopulate: PropTypes.func.isRequired,
+    clearpotentialschedules: PropTypes.func.isRequired,
+    applypotentialschedules: PropTypes.func.isRequired,
+    busy: PropTypes.bool.isRequired,
 };
 
 export default DragDropContext(HTML5Backend)(Schedules);

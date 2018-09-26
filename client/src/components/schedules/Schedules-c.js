@@ -1,25 +1,28 @@
 import { connect } from "react-redux";
-import { addobject, getobjects, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
 import Schedules from "./Schedules";
+import {checkconstraint, getobjects, autopopulate, clearpotentialschedules, addobject} from "../../actions";
 
 const mapStateToProps = state => ({
     schedules: state.schedules,
-    shifts: state.shifts,
+    potentialschedules: state.potentialschedules,
     users: state.users,
-    holidays: state.holidays,
     groups: state.groups,
+    user: state.user,
+    moment: state.moment,
+    constraints: state.constraints,
+    constraintsresults: state.constraintsresults,
+    busy: state.busy,
 });
 
 const mapDispatchToProps = dispatch => ({
-    addschedule: schedule => dispatch(addobject("schedules", schedule)),
-    removeschedule: id => dispatch(removeobject("schedules", id)),
-    getschedules: () => dispatch(getobjects("schedules")),
-    updateschedule: (id, data) => dispatch(updateobject("schedules", id, data)),
-    showmodal: children => dispatch(showmodal(children)),
-    hidemodal: () => dispatch(hidemodal()),
-    getshifts: () => dispatch(getobjects("shifts")),
-    getusers: () => dispatch(getobjects("users")),
-    getgroups: () => dispatch(getobjects("groups")),
+    checkconstraint: id => dispatch(checkconstraint(id)),
+    getconstraints: () => dispatch(getobjects("constraints")),
+    autopopulate: () => dispatch(autopopulate()),
+    clearpotentialschedules: () => dispatch(clearpotentialschedules()),
+    applypotentialschedules: potentialschedules => {
+        potentialschedules.forEach(s=>dispatch(addobject("schedules", s)));
+        dispatch(clearpotentialschedules());
+    },
 });
 
 export default connect(

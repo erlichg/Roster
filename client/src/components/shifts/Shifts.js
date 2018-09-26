@@ -2,14 +2,11 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
-import {Dropdown} from "semantic-ui-react";
-import 'semantic-ui-css/semantic.min.css';
-import Form from "../form/Form";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {Button, ButtonGroup} from 'reactstrap';
 import _ from 'lodash';
-import {Checkbox} from 'semantic-ui-react';
+import {Checkbox, Input} from 'semantic-ui-react';
 import {HuePicker} from 'react-color';
+import ShiftForm from "./ShiftForm";
 
 export const DAYS = [
     'Sunday',
@@ -20,7 +17,7 @@ export const DAYS = [
     'Friday',
     'Saturday'
 ];
-const WEEK = [
+export const WEEK = [
     0,
     1,
     2,
@@ -29,8 +26,8 @@ const WEEK = [
     5,
     6
 ];
-const WORKWEEK = [0, 1, 2, 3, 4];
-const WEEKEND = [5, 6];
+export const WORKWEEK = [0, 1, 2, 3, 4];
+export const WEEKEND = [5, 6];
 
 class Shifts extends Component {
     constructor(props) {
@@ -59,8 +56,20 @@ class Shifts extends Component {
                 }
             }, {
                 Header: "Group",
-                accessor: "group.name",
-            },{
+                accessor: "group.name"
+            }, {
+                Header: "Weight",
+                accessor: "",
+                Cell: row => {
+                    const {_id, weight} = row.value;
+                    return (
+                    <Input style={{width: '60px'}} type="number" defaultValue={weight} onChange={e=>{
+                    props.updateshift(_id, {
+                        weight: e.target.value,
+                    })
+                    }}/>
+                )}
+            }, {
                 Header: "Enabled",
                 accessor: "",
                 Cell: row => {
@@ -80,6 +89,7 @@ class Shifts extends Component {
                 Cell: row => {
                     const {_id, color} = row.value;
                     return <HuePicker
+                    width="100%"
                         color={color}
                         onChangeComplete={c => {
                         props.updateshift(_id, {color: c.hex})
@@ -122,15 +132,6 @@ class Shifts extends Component {
         ];
     }
 
-    componentDidMount() {
-        this
-            .props
-            .getshifts();
-        this
-            .props
-            .getgroups();
-    }
-
     render() {
         const {shifts} = this.props;
         return (
@@ -167,164 +168,48 @@ class Shifts extends Component {
 
     addEditShift = (title = "New Shift", shift = {}) => {
         const {addshift, updateshift, showmodal, hidemodal, groups} = this.props;
-        let daysValue = shift.days
-            ? 4
-            : undefined;
-        if (_.isEqual(shift.days, WEEK)) {
-            daysValue = 1;
-        }
-        if (_.isEqual(shift.days, WORKWEEK)) {
-            daysValue = 2;
-        }
-        if (_.isEqual(shift.days, WEEKEND)) {
-            daysValue = 3;
-        }
+
         showmodal({
-            state: {
-                days: daysValue,
-                cSelected: shift.days || [],
-                onCheckboxBtnClick: function (selected) {
-                    const index = this
-                        .state
-                        .cSelected
-                        .indexOf(selected);
-                    if (index < 0) {
-                        this
-                            .state
-                            .cSelected
-                            .push(selected);
-                    } else {
-                        this
-                            .state
-                            .cSelected
-                            .splice(index, 1);
-                    }
-                    this.setState({
-                        cSelected: [...this.state.cSelected]
-                    });
-                }
-            },
             title,
-            message: function () {
-                return (
-                    <Form ref={e => this.form = e}>
-                        <div className={"form-group"}>
-                            <label htmlFor={"name"}>
-                                shift name
-                            </label>
-                            <input
-                                id={"name"}
-                                className={"form-control"}
-                                required={true}
-                                name={"name"}
-                                type={"text"}
-                                defaultValue={shift.name}
-                                ref={e => this.name = e}/>
-                            <div className="invalid-feedback"/>
-                        </div>
-                        <div className={"form-group"}>
-                            <label htmlFor={"days"}>
-                                Days
-                            </label>
-                            <div>
-                                <Dropdown
-                                    id="days"
-                                    ref={e => this.days = e}
-                                    placeholder="Days"
-                                    fluid
-                                    selection
-                                    defaultValue={daysValue}
-                                    onChange={(e, f) => {
-                                    this.setState({days: f.value});
-                                }}
-                                    options={[
-                                    {
-                                        key: 1,
-                                        text: "Week",
-                                        value: 1
-                                    }, {
-                                        key: 2,
-                                        text: "Work Week",
-                                        value: 2
-                                    }, {
-                                        key: 3,
-                                        text: "Weekend",
-                                        value: 3
-                                    }, {
-                                        key: 4,
-                                        text: "Custom",
-                                        value: 4
-                                    }
-                                ]}/> {this.state.days === 4
-                                    ? <ButtonGroup
-                                            style={{
-                                            paddingTop: '10px'
-                                        }}>
-                                            {DAYS.map((d, i) => <Button
-                                                key={i}
-                                                color="primary"
-                                                onClick={() => this.state.onCheckboxBtnClick.bind(this)(i)}
-                                                active={this
-                                                .state
-                                                .cSelected
-                                                .includes(i)}>{d}</Button>)}
-                                        </ButtonGroup>
-                                    : null}
-                            </div>
-                            <div className="invalid-feedback"/>
-                        </div>
-                        <div className={"form-group"}>
-                            <label htmlFor={"group"}>
-                                User Group
-                            </label>
-                            <Dropdown
-                                ref={e => this.group = e}
-                                id="group"
-                                placeholder="Group"
-                                fluid
-                                selection
-                                defaultValue={shift.group
-                                ? shift
-                                    .group._id
-                                : undefined}
-                                options={groups.map(g => {
-                                return {key: g._id, text: g.name, value: g._id}
-                            })}/>
-                            <div className="invalid-feedback"/>
-                        </div>
-                    </Form>
-                );
-            },
+            message: <ShiftForm
+                updateref={e => this.form = e}
+                shift={shift}
+                groups={groups}
+                submit={data => {
+                let days = [];
+                if (data.days === 1) {
+                    days = WEEK;
+                } else if (data.days === 2) {
+                    days = WORKWEEK;
+                } else if (data.days === 3) {
+                    days = WEEKEND;
+                } else if (data.days === 4) {
+                    days = data.cSelected;
+                }
+                data.days=  days;
+                if (Object.keys(shift).length > 0) {/*edit mode*/
+                    const update = {
+                        ...shift,
+                        ...data
+                    };
+                    if (!_.isEqual(update, shift)) {
+                        updateshift(shift._id, data)
+                    }
+                } else {
+                    addshift(data);
+                }
+                hidemodal();
+            }}/>,
             buttons: [
                 {
                     label: 'Cancel',
                     callback: hidemodal
                 }, {
                     label: 'OK',
-                    callback: function () {
-                        if (this.form.validate()) {
-                            let days = [];
-                            if (this.state.days === 1) {
-                                days = WEEK;
-                            } else if (this.state.days === 2) {
-                                days = WORKWEEK;
-                            } else if (this.state.days === 3) {
-                                days = WEEKEND;
-                            } else if (this.state.days === 4) {
-                                days = this.state.cSelected;
-                            }
-                            if (Object.keys(shift).length > 0) {/*edit mode*/
-                                updateshift(shift._id, {
-                                    name: this.name.value,
-                                    days,
-                                    group: this.group.state.value
-                                })
-                            } else {
-                                addshift({name: this.name.value, days, group: this.group.state.value});
-                            }
-                            hidemodal();
-                        }
-                    }
+                    callback: () => this
+                        .form
+                        .submitHandler()
+
                 }
             ]
         })
@@ -332,14 +217,12 @@ class Shifts extends Component {
 }
 Shifts.propTypes = {
     shifts: PropTypes.array.isRequired,
-    getshifts: PropTypes.func.isRequired,
     addshift: PropTypes.func.isRequired,
     removeshift: PropTypes.func.isRequired,
     updateshift: PropTypes.func.isRequired,
     showmodal: PropTypes.func.isRequired,
     hidemodal: PropTypes.func.isRequired,
     groups: PropTypes.array.isRequired,
-    getgroups: PropTypes.func.isRequired
 }
 
 export default Shifts;

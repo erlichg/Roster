@@ -1,21 +1,22 @@
 import { connect } from "react-redux";
 import { withRouter } from 'react-router';
-import { getobjects, addobject, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
+import { addobject, updateobject, removeobject, showmodal, hidemodal } from "../../actions";
 import Users from "./Users";
 
 const mapStateToProps = state => ({
     users: state.users,
-    groups: state.groups
+    groups: state.groups,
+    roles: state.roles,
+    user: state.user,
+    isadmin: state.user.role.name === 'Admin'
 });
 
 const mapDispatchToProps = dispatch => ({
     adduser: user => dispatch(addobject("users", user)),
     removeuser: id => dispatch(removeobject("users", id)),
-    getusers: () => dispatch(getobjects("users")),
     updateuser: (id, data) => dispatch(updateobject("users", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
-    getgroups: () => dispatch(getobjects("groups")),
 });
 
 export default withRouter(connect(

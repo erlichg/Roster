@@ -17,6 +17,17 @@
     right: 1px;
     top: 1px;
     cursor: pointer;
+    visibility: hidden;
+}
+
+.dayshift:hover .delete {
+    visibility: visible;
+}
+
+.dayshift .notvalid {
+    position: absolute;
+    left: 1px;
+    top: 1px;
 }
 
 .dayshift.hover {

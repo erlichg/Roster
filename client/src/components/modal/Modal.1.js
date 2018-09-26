@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {Button, Header, Image, Modal as M} from 'semantic-ui-react';
+import {Button, Header, Modal as M} from 'semantic-ui-react';
 
 class Modal extends React.Component {
     componentWillReceiveProps(nextProps) {

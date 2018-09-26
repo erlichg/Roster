@@ -1,6 +1,5 @@
 import React, {Component} from "react";
-import {Navbar, NavbarBrand, Nav, NavItem, NavLink} from "reactstrap";
-import {BrowserRouter as Router, Route, Link} from "react-router-dom";
+import {BrowserRouter as Router, Route, NavLink} from "react-router-dom";
 import logo from "./logo.svg";
 import "./App.css";
 import Home from "./components/home/Home-c";
@@ -10,46 +9,75 @@ import Shifts from "./components/shifts/Shifts-c";
 import Schedules from "./components/schedules/Schedules-c";
 import Profile from "./components/profiles/Profile-c";
 import Modal from "./components/modal/Modal-c";
+import Constraints from "./components/constraints/Constraints-c";
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {fab} from '@fortawesome/free-brands-svg-icons';
 import {faTrashAlt, faEdit, faEllipsisV} from '@fortawesome/free-solid-svg-icons';
 import ReactTooltip from 'react-tooltip';
+import {Dropdown, Menu, Input, Message, Label} from 'semantic-ui-react';
+import 'semantic-ui-offline/semantic.min.css';
+import { connect } from "react-redux";
+import {setuser, seterror} from "./actions";
 
 library.add(fab, faEdit, faTrashAlt, faEllipsisV)
 
+const Nav = props => (<NavLink exact {...props} activeClassName="active"/>);
+
 class App extends Component {
+
+    changeUser = () => {
+        this.props.setuser(this.user.inputRef.value);
+        this.user.inputRef.value = '';
+    }
+
     render() {
+        const {user, isadmin, error, dismisserror, messages} = this.props;
+        const onlyAdmin = comp => isadmin ? comp : props => <label>You don't have permission to view this page</label>;
+        const unread = messages.filter(m=>!m.read && m.to._id.toString()===user._id.toString()).length;
         return (
             <Router>
                 <div className="App">
-
                     <header className="App-header">
-                        <Navbar expand="md">
-                            <NavbarBrand href="/">
+                        <Menu secondary inverted>
+                            <Menu.Item as={Nav} to={'/home'}>
                                 <img src={logo} className="App-logo" alt="logo"/>XtremIO Roster
-                            </NavbarBrand>
-                            <Nav navbar>
-                                <NavItem>
-                                    <NavLink tag={Link} to="/schedules">Schedules</NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} to="/users">Users</NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} to="/groups">Groups</NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} to="/shifts">Shifts</NavLink>
-                                </NavItem>
-                            </Nav>
-                        </Navbar>
+                            </Menu.Item>
+                            {["schedules", "constraints", "users", "groups", "shifts"].map(s => <Menu.Item key={s} name={s} as={Nav} to={`/${s}`}/>)}
+                            <Menu.Menu position='right'>
+                            {unread > 0 ? <Label data-place="bottom" data-tip="You have unread messages" color='red' floating>{unread}</Label> : null}
+                            <Dropdown item text={user.name}>
+                                <Dropdown.Menu>
+                                    <Dropdown.Item as={Nav} to={{
+                                        pathname: '/profile',
+                                        state: {
+                                            user,
+                                            tab: 2
+                                        }
+                                    }}>                                    
+                                        Messages
+                                        {unread > 0 ? <Label data-place="bottom" data-tip="You have unread messages" color='red' circular>{unread}</Label> : null}
+                                    </Dropdown.Item>                             
+                                    <Dropdown.Item>
+                                        <Input ref={e=>this.user=e} action={{ content: 'Change', onClick: this.changeUser }} placeholder='User name' />
+                                    </Dropdown.Item>
+                                    <Dropdown.Divider/>
+                                    <Dropdown.Item as={Nav} to={'/logout'}>Logout</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                            </Menu.Menu>
+                        </Menu>
+                        <Message error={true} floating={true} hidden={error===undefined} onDismiss={dismisserror}>
+                        <Message.Header>Error</Message.Header>
+                        <p>{error}</p>
+                        </Message>
                     </header>
 
                     <div className="container-fluid">
-                        <Route exact path="/" component={Home}/>
-                        <Route exact path="/users" component={Users}/>
-                        <Route exact path="/groups" component={Groups}/>
-                        <Route exact path="/shifts" component={Shifts}/>
+                        <Route exact path="/home" component={Home}/>
+                        <Route exact path="/users" component={onlyAdmin(Users)}/>
+                        <Route exact path="/groups" component={onlyAdmin(Groups)}/>
+                        <Route exact path="/shifts" component={onlyAdmin(Shifts)}/>
+                        <Route exact path="/constraints" component={onlyAdmin(Constraints)}/>
                         <Route exact path="/schedules" component={Schedules}/>
                         <Route exact path="/profile" component={Profile}/>
                         <Modal/>
@@ -61,5 +89,19 @@ class App extends Component {
         );
     }
 }
+const mapStateToProps = state => ({
+    user: state.user,
+    isadmin: state.user.role.name === 'Admin',
+    error: state.error,
+    messages: state.messages,
+});
 
-export default App;
+const mapDispatchToProps = dispatch => ({
+   setuser: user => dispatch(setuser(user)),
+   dismisserror: () => dispatch(seterror()),
+});
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(App);

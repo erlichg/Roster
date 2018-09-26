@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
-const moment = require("moment");
 
 const ScheduleSchema = new mongoose.Schema({
     week: {
-        type: Number,
-        default: moment().week()
+        type: Number
+    },
+    year: {
+        type: Number
     },
     shift: {
         type: mongoose.Schema.Types.ObjectId,

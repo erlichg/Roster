@@ -4,13 +4,12 @@
 
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
-  height: 80px;
 }
 
 .App-header {
   background-color: #222;
-  height: 100px;
-  padding: 5px;
+  height: 60px;
+  padding: 10px;
   color: white;
 }
 
@@ -37,4 +36,17 @@
 }
 .rt-td {
   overflow: inherit !important;
+}
+
+.ui.menu > .item.active {
+  border-bottom: 1px solid yellow !important;
+}
+
+.App .ui.floating.label {
+  top: 0 !important;
+  left: 99.5% !important;
+}
+
+.App .ui.circular.label {
+  margin-left: 5px;
 }

@@ -2,10 +2,11 @@ const express = require("express");
 const db = require("../db/db");
 
 const table = "Shifts";
+const populate = ["group"];
 const router = express.Router();
 
 router.get("/", (req, res, next) => {
-    db.find(table, {}, ["group"])
+    db.find(table, {}, populate)
         .then(shifts => res.json(shifts))
         .catch(err => {
             console.error(err);
@@ -13,7 +14,7 @@ router.get("/", (req, res, next) => {
         });
 });
 router.post("/", (req, res, next) => {
-    db.add(table, req.body, ["group"])
+    db.add(table, req.body, populate)
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
@@ -22,7 +23,7 @@ router.post("/", (req, res, next) => {
 });
 router.put("/:id", (req, res, next) => {
     const { id } = req.params;
-    db.updateById(table, id, { $set: req.body }, ["group"])
+    db.updateById(table, id, { $set: req.body }, populate)
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);
@@ -31,7 +32,7 @@ router.put("/:id", (req, res, next) => {
 });
 router.delete("/:id", (req, res, next) => {
     const { id } = req.params;
-    db.removeById(table, id)
+    db.removeById(table, id, populate)
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);

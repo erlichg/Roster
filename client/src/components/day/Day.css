@@ -1,15 +1,42 @@
 .day {
-    flex-basis: 14%; /* seven per row */
+    flex-basis: 14.28%; /* seven per row */
     height: 150px;
     border: 1px solid black;
     position: relative;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.day.out {
+    background-color: lightgray;
+}
+
+.day.today {
+    background-color: aquamarine;
+}
+
+.day .bottom {
+    display: flex;
+    justify-content: flex-end;
+    flex-direction: column;
 }
 
 .day .holiday {
     border: 1px solid black;
-    position: absolute;
-    bottom: 2px;
-    left: 2px;
-    width: 98%;
-    display: block;
+    margin: 2px;
+}
+
+.day .vacation {
+    border: 1px solid black;
+    margin: 2px;
+}
+
+.day .onlyonhover * {
+    visibility: hidden;
+}
+
+.day .onlyonhover:hover * {
+    visibility: visible;
+    opacity: 0.6;
 }

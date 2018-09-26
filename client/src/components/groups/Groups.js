@@ -2,8 +2,9 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
-import Form from "../form/Form";
+import GroupForm from "./GroupForm";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import _ from "lodash";
 
 class Groups extends Component {
     constructor(props) {
@@ -49,12 +50,6 @@ class Groups extends Component {
         ];
     }
 
-    componentDidMount() {
-        this
-            .props
-            .getgroups();
-    }
-
     render() {
         const {groups} = this.props;
         return (
@@ -92,22 +87,20 @@ class Groups extends Component {
     addEditgroup = (title = "New group", group = {}) => {
         const {addgroup, updategroup, showmodal, hidemodal} = this.props;
         showmodal({
-            title, message: <Form ref={e => this.form = e}>
-                <div className={"form-group"}>
-                    <label htmlFor={"name"}>
-                        group name
-                    </label>
-                    <input
-                        id={"name"}
-                        className={"form-control"}
-                        required={true}
-                        name={"name"}
-                        type={"text"}
-                        defaultValue={group.name}
-                        ref={e => this.name = e}/>
-                    <div className="invalid-feedback"/>
-                </div>
-            </Form>,
+            title, message: <GroupForm updateref={e => this.form = e} group={group} submit={data=>{
+                if (Object.keys(group).length > 0) {/*edit mode*/
+                    const update = {
+                        ...group,
+                        ...data
+                    };
+                    if (!_.isEqual(update, group)) {
+                        updategroup(group._id, data)
+                    }
+                } else {
+                    addgroup(data);
+                }
+                hidemodal();
+            }}/>,
             buttons: [
                 {
                     label: 'Cancel',
@@ -117,16 +110,9 @@ class Groups extends Component {
                     label: 'OK',
                     className: 'btn-success',
                     callback: () => {
-                        if (this.form.validate()) {
-                            if (Object.keys(group).length > 0) { //edit mode
-                                updategroup(group._id, {
-                                    name: this.name.value,
-                                })
-                            } else {
-                                addgroup({name: this.name.value});
-                            }
-                            hidemodal();
-                        }
+                        this
+                            .form
+                            .submitHandler();
                     }
                 }
             ]

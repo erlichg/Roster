@@ -20,9 +20,9 @@ function collect(connect, monitor) {
 class Droppable extends React.Component {
 
     render() {
-        const {connectDropTarget, children, isOver, canDrop, item} = this.props;
+        const {connectDropTarget, children, isOver, canDrop, item, className} = this.props;
         return (connectDropTarget && connectDropTarget(
-            <div>
+            <div className={className}>
             {children(isOver, canDrop, item)}
         </div>,))
     }
@@ -34,7 +34,8 @@ Droppable.propTypes = {
     onDrop: PropTypes.func.isRequired,
     canDrop: PropTypes.bool.isRequired,
     item: PropTypes.any,
-    children: PropTypes.func.isRequired
+    children: PropTypes.func.isRequired,
+    className: PropTypes.string,
 }
 
 export default accepts => DropTarget(accepts, target, collect)(Droppable);

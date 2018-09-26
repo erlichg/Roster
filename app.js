@@ -1,3 +1,4 @@
+require("./prototypes");
 const bodyParser = require("body-parser");
 const createError = require("http-errors");
 const express = require("express");
@@ -16,12 +17,16 @@ const usersRouter = require("./routes/users");
 const groupsRouter = require("./routes/groups");
 const shiftsRouter = require("./routes/Shifts");
 const schedulesRouter = require("./routes/Schedules");
+const EventsRouter = require("./routes/Events");
+const RolesRouter = require("./routes/roles");
+const ConstraintsRouter = require("./routes/constraints");
+const MessagesRouter = require("./routes/Messages");
 
 const app = express();
 
 app.use(logger("dev"));
 app.use(compression());
-app.use(session({ secret: "cats" }));
+app.use(session({ secret: "cats", resave: false, saveUninitialized: false }));
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(bodyParser.urlencoded({ limit: "20mb", extended: false }));
 app.use(cookieParser());
@@ -47,6 +52,10 @@ app.use("/api/users", usersRouter);
 app.use("/api/groups", groupsRouter);
 app.use("/api/shifts", shiftsRouter);
 app.use("/api/schedules", schedulesRouter);
+app.use("/api/events", EventsRouter);
+app.use("/api/roles", RolesRouter);
+app.use("/api/constraints", ConstraintsRouter);
+app.use("/api/messages", MessagesRouter);
 const auth = (req, res, next) => {
     if (!req.isAuthenticated() && req.url !== "/login") {
         console.info("Got unauthenticated call. Redirecting to /login");
@@ -75,6 +84,7 @@ app.use((err, req, res, next) => {
 });
 mongoose.connect(
     config.mongoURL,
+    { useNewUrlParser: true },
     (err, conn) => {
         if (err) throw err;
     }

@@ -3,12 +3,20 @@ const Groups = require("./Groups");
 const Users = require("./Users");
 const Shifts = require("./Shifts");
 const Schedules = require("./Schedules");
+const Events = require("./Events");
+const Roles = require("./Roles");
+const Constraints = require("./Constraints");
+const Messages = require("./Messages");
 
 const tables = {
     Users,
     Groups,
     Shifts,
-    Schedules
+    Schedules,
+    Events,
+    Roles,
+    Constraints,
+    Messages
 };
 
 /**
@@ -83,20 +91,27 @@ const updateById = (collection, id, update, populate) =>
  * @param {string} collection - The collection
  * @param {string} id - The id of the object
  */
-const removeById = (collection, id) =>
+const removeById = (collection, id, populate) =>
     new Promise((resolve, reject) => {
-        tables[collection].deleteOne(
-            {
-                _id: typeof id === "string" ? mongoose.Types.ObjectId(id) : id
-            },
-            err => {
-                if (err) {
-                    console.error(err);
-                    reject(err);
-                }
-                resolve(id);
-            }
-        );
+        findById(collection, id, populate)
+            .then(obj => {
+                tables[collection].deleteOne(
+                    {
+                        _id:
+                            typeof id === "string"
+                                ? mongoose.Types.ObjectId(id)
+                                : id
+                    },
+                    err => {
+                        if (err) {
+                            console.error(err);
+                            reject(err);
+                        }
+                        resolve(obj);
+                    }
+                );
+            })
+            .catch(errr => reject(errr));
     });
 
 /**
@@ -118,6 +133,7 @@ const add = (collection, data, populate) =>
     });
 
 module.exports = {
+    tables,
     findById,
     find,
     updateById,

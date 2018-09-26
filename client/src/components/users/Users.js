@@ -3,14 +3,14 @@ import PropTypes from "prop-types";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
 import {Dropdown} from "semantic-ui-react";
-import 'semantic-ui-css/semantic.min.css';
 import UserForm from "./UserForm";
 import _ from "lodash";
 
 class Users extends Component {
-    constructor(props) {
-        super(props);
-        this.columns = [
+
+    render() {
+        const {history, groups, roles, showmodal, hidemodal, removeuser} = this.props;
+        const columns = [
             {
                 Header: "Name",
                 accessor: "name"
@@ -25,6 +25,13 @@ class Users extends Component {
                     .map(g => g.name)
                     .join(", ")
             }, {
+                id: "role",
+                Header: "Role",
+                accessor: d=>d.role?d.role.name:''
+            }, {
+                Header: "Location",
+                accessor: "location"
+            }, {
                 Header: "",
                 accessor: "",
                 width: 70,
@@ -32,32 +39,28 @@ class Users extends Component {
                     <Dropdown icon='ellipsis vertical' simple item direction="left">
                         <Dropdown.Menu>
                             <Dropdown.Item
-                                data-tip="User Profile"
-                                onClick={() => props.history.push({
+                                onClick={() => history.push({
                                 pathname: "/profile",
                                 state: {
-                                    user: row.value,
-                                    groups: props.groups
+                                    user: row.value
                                 }
                             })}>Profile</Dropdown.Item>
                             <Dropdown.Item
-                                data-tip="Edit this item"
                                 onClick={() => this.addEditUser('Edit User', row.value)}>Edit</Dropdown.Item>
                             <Dropdown.Item
-                                data-tip="Remove this item"
                                 onClick={() => {
-                                props.showmodal({
+                                showmodal({
                                     title: 'Remove user',
                                     message: 'Do you really want to remove the user?',
                                     buttons: [
                                         {
                                             label: 'No',
-                                            callback: props.hidemodal
+                                            callback: hidemodal
                                         }, {
                                             label: 'Yes',
                                             callback: () => {
-                                                props.removeuser(row.value._id);
-                                                props.hidemodal();
+                                                removeuser(row.value._id);
+                                                hidemodal();
                                             }
                                         }
                                     ]
@@ -68,18 +71,6 @@ class Users extends Component {
                 )
             }
         ];
-    }
-
-    componentDidMount() {
-        this
-            .props
-            .getusers();
-        this
-            .props
-            .getgroups();
-    }
-
-    render() {
         const {users} = this.props;
         return (
             <div id="Users">
@@ -103,7 +94,7 @@ class Users extends Component {
                 </div>
                 <ReactTable
                     data={users}
-                    columns={this.columns}
+                    columns={columns}
                     showPagination={false}
                     style={{
                     height: "400px"
@@ -114,13 +105,14 @@ class Users extends Component {
     }
 
     addEditUser = (title = "New User", user = {}) => {
-        const {groups, adduser, updateuser, showmodal, hidemodal} = this.props;
+        const {groups, roles, adduser, updateuser, showmodal, hidemodal} = this.props;
         showmodal({
             title,
             message: () => <UserForm
                 updateref={e => this.form = e}
                 user={user}
                 groups={groups}
+                roles={roles}
                 submit={data => {
                 if (Object.keys(user).length > 0) {/*edit mode*/
                     const update = {
@@ -128,14 +120,10 @@ class Users extends Component {
                         ...data
                     };
                     if (!_.isEqual(update, user)) {
-                        updateuser(user._id, {
-                            name: data.name.value,
-                            email: data.email.value,
-                            groups: data.groups.state.value
-                        })
+                        updateuser(user._id, data)
                     }
                 } else {
-                    adduser({name: data.name.value, email: data.email.value, groups: data.groups.state.value});
+                    adduser(data);
                 }
                 hidemodal();
             }}/>,
@@ -159,15 +147,16 @@ class Users extends Component {
 }
 Users.propTypes = {
     users: PropTypes.array.isRequired,
-    getusers: PropTypes.func.isRequired,
+    roles: PropTypes.array.isRequired,
     adduser: PropTypes.func.isRequired,
     removeuser: PropTypes.func.isRequired,
     updateuser: PropTypes.func.isRequired,
     showmodal: PropTypes.func.isRequired,
     hidemodal: PropTypes.func.isRequired,
     groups: PropTypes.array.isRequired,
-    getgroups: PropTypes.func.isRequired,
-    history: PropTypes.object.isRequired
+    history: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired,
+    isadmin: PropTypes.bool.isRequired,
 };
 
 export default Users;

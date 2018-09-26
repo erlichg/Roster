@@ -14,61 +14,26 @@ class Form extends React.Component {
     return el;
   }
 
-  /**
-     * Them main function that validates the form and fills in the error messages.
-     * @returns bool Returns a boolean showing if the form is valid for submission or not.
-     **/
   validate = () => {
-    //this.formEl is a reference in the component to the form DOM element.
     const formEl = ReactDOM.findDOMNode(this.formEl);
-    const formLength = formEl.length;
-
-    /*
-      * The checkValidity() method on a form runs the
-      * html5 form validation of its elements and returns the result as a boolean.
-      * It returns 'false' if at least one of the form elements does not qualify,
-      * and 'true', if all form elements are filled with valid values.
-      */
-    if (formEl.checkValidity() === false) {
-      for (let i = 0; i < formLength; i++) {
-        //the i-th child of the form corresponds to the forms i-th input element
-        const elem = formEl[i];
-        if (elem.nodeName === "BUTTON") {
-          continue;
-        }
-        const field = this.findAncestor(elem, "field");
-        if (!elem.validity.valid) {
-          field
-            .classList
-            .add("error");
-        } else {
-          field
-            .classList
-            .remove("error");
-        }
-      }
-
-      // Return 'false', as the formEl.checkValidity() method said there are some
-      // invalid form inputs.
-      this.setState({isValidated: true});
-      return false;
-    } else {
-      //The form is valid, so we clear all the error messages
-      for (let i = 0; i < formLength; i++) {
-        const elem = formEl[i];
-        if (elem.nodeName === "BUTTON") {
-          continue;
-        }
-        const field = this.findAncestor(elem, "field");
+    const fields = formEl.querySelectorAll('.field');
+    const valid = this.props.validate ? this.props.validate() : true;
+    const formLength = fields.length;
+    for (let i = 0; i < formLength; i++) {
+      const field = fields[i];
+      const elem = field.querySelector('[validate="true"]');
+      if (elem && !valid) {
+        field
+          .classList
+          .add("error");
+      } else {
         field
           .classList
           .remove("error");
       }
-
-      //Return 'true', as the form is valid for submission
-      this.setState({isValidated: true});
-      return true;
     }
+    this.setState({isValidated: true});
+    return valid;
   };
 
   /**
@@ -76,8 +41,9 @@ class Form extends React.Component {
     * It stops the default form submission process and proceeds with custom validation.
     **/
   submitHandler = event => {
-    if (event) event.preventDefault();
-
+    if (event) 
+      event.preventDefault();
+    
     // If the call of the validate method was successful, we can proceed with form
     // submission. Otherwise we do nothing.
     if (this.validate()) {
@@ -122,7 +88,8 @@ class Form extends React.Component {
 }
 
 Form.propTypes = {
-  submit: PropTypes.func.isRequired
+  submit: PropTypes.func.isRequired,
+  validate: PropTypes.func
 };
 
 export default Form;
