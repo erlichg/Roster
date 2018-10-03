@@ -9,7 +9,7 @@ import _ from "lodash";
 class Users extends Component {
 
     render() {
-        const {history, groups, roles, showmodal, hidemodal, removeuser} = this.props;
+        const {showmodal, hidemodal, removeuser} = this.props;
         const columns = [
             {
                 Header: "Name",
@@ -38,13 +38,6 @@ class Users extends Component {
                 Cell: row => (
                     <Dropdown icon='ellipsis vertical' simple item direction="left">
                         <Dropdown.Menu>
-                            <Dropdown.Item
-                                onClick={() => history.push({
-                                pathname: "/profile",
-                                state: {
-                                    user: row.value
-                                }
-                            })}>Profile</Dropdown.Item>
                             <Dropdown.Item
                                 onClick={() => this.addEditUser('Edit User', row.value)}>Edit</Dropdown.Item>
                             <Dropdown.Item

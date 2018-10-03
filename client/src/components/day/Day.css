@@ -27,6 +27,12 @@
     margin: 2px;
 }
 
+.day .userholiday {
+    border: 1px solid black;
+    margin: 2px;
+    cursor: pointer;
+}
+
 .day .vacation {
     border: 1px solid black;
     margin: 2px;
@@ -39,4 +45,8 @@
 .day .onlyonhover:hover * {
     visibility: visible;
     opacity: 0.6;
+}
+
+.day .add * {
+    cursor: pointer !important;
 }

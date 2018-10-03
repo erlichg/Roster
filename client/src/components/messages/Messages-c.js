@@ -6,6 +6,7 @@ const mapStateToProps = state => ({
     messages: state.messages,
     isadmin: state.user.role.name === 'Admin',
     users: state.users,
+    user: state.user,
 });
 
 const mapDispatchToProps = dispatch => ({

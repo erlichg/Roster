@@ -54,13 +54,13 @@ class App extends Component {
                                         pathname: '/profile',
                                         state: {
                                             user,
-                                            tab: 2
+                                            tab: unread > 0 ? 2 : 0
                                         }
                                     }}>                                    
-                                        Messages
+                                        Profile
                                         {unread > 0 ? <Label data-place="bottom" data-tip="You have unread messages" color='red' circular>{unread}</Label> : null}
                                     </Dropdown.Item>                             
-                                    {user.name === 'Guy Erlich' ? <Dropdown.Item>
+                                    {user.email === 'guy.erlich@emc.com' ? <Dropdown.Item>
                                         <Input ref={e=>this.user=e} action={{ content: 'Change', onClick: this.changeUser }} placeholder='User name' />
                                     </Dropdown.Item> : null}
                                     <Dropdown.Divider/>

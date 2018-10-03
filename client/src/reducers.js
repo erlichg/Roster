@@ -33,18 +33,6 @@ export const defaultState = {
     holidays: {},
     events: {},
     user: undefined,
-    // {
-    //     "_id": "5b6c2470ce291463400b05d7",
-    //     "name": "Guy",
-    //     "email": "guy.erlich@emc.com",
-    //     "groups": [],
-    //     "constraints": [],
-    //     "__v": 0,
-    //     "role": {
-    //         "_id": "5b6c2b122822f30edba70bca",
-    //         "name": "Admin"
-    //     }
-    // },
     roles: [],
     moment: moment(),
     constraints: [],

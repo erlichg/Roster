@@ -31,10 +31,10 @@ function cartesianProduct(arrays) {
 
 const product = arr => {
     if (arr.length === 0) {
-        return [undefined];
+        return [];
     }
     if (arr.length === 1) {
-        return arr[0];
+        return arr[0].length > 0 ? arr[0] : [undefined];
     }
 
     const result = [];
@@ -254,28 +254,45 @@ router.get("/autopopulate", async (req, res, next) => {
                     const groups = _.concat(
                         ...leastUsedUserConstraints.map(c => c.groups)
                     );
-                    const histogram = {};
-                    p.map((u, i) => ({
-                        user: u,
-                        shift: shifts[i % shifts.length]
-                    }))
-                        .filter(u => u.user && uc.userInGroups(u.user, groups))
-                        .forEach(u => {
-                            const current =
-                                histogram[u.user._id.toString()] || 0;
-                            histogram[u.user._id.toString()] =
-                                current + u.shift.weight;
-                        });
-
                     if (
-                        _.max(Object.values(histogram)) -
-                            _.min(Object.values(histogram)) >
-                        1
+                        !groups.find(group => {
+                            const histogram = {};
+                            p.map((u, i) => ({
+                                user: u,
+                                shift: shifts[i % shifts.length]
+                            }))
+                                .filter(
+                                    u =>
+                                        u.shift.group._id.toString() ===
+                                            group._id.toString() &&
+                                        u.user &&
+                                        u.user.groups.find(
+                                            g =>
+                                                g._id.toString() ===
+                                                group._id.toString()
+                                        )
+                                )
+                                .forEach(u => {
+                                    const current =
+                                        histogram[u.user._id.toString()] || 0;
+                                    histogram[u.user._id.toString()] =
+                                        current + u.shift.weight;
+                                });
+
+                            if (
+                                _.max(Object.values(histogram)) -
+                                    _.min(Object.values(histogram)) >
+                                1
+                            ) {
+                                callback(null, false);
+                                return true;
+                            }
+                            return false;
+                        })
                     ) {
-                        return callback(null, false);
+                        return callback(null, true);
                     }
                 }
-                return callback(null, true);
             },
             (err, result) => {
                 if (result) {

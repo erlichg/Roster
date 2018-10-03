@@ -50,3 +50,11 @@
 .App .ui.circular.label {
   margin-left: 5px;
 }
+
+.App .ui.floating.message {
+  z-index: 1;
+}
+
+.App .ui.error.message {
+  background-color: #f7b5b5;
+}

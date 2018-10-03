@@ -34,7 +34,6 @@ class Schedules extends Component {
             potentialschedules,
             users,
             groups,
-            user,
             moment,
             constraintsresults,
             constraints,
@@ -75,7 +74,7 @@ class Schedules extends Component {
                                             }}>{u.name}</label>
                                             <div className="userschedulecontainer">
                                                 {weekschedules
-                                                    .filter(s => s.user._id === u._id)
+                                                    .filter(s => s.user && s.user._id === u._id)
                                                     .map(s =>_.range(0,s.shift.weight).map((t,i)=><span key={i}
                                                     className = "userschedule" style = {{backgroundColor: s.shift.color}}/>))}
                                             </div>
@@ -148,11 +147,7 @@ class Schedules extends Component {
                     </div>
                 </div>
                 <div className="calendar">
-                    <Calendar
-                        user={user}
-                        allowedactions={{
-                        addevent: false
-                    }}/>
+                    <Calendar/>
                 </div>
             </div>
         );

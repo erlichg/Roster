@@ -47,16 +47,22 @@ class DayShift extends Component {
         }
     }
 
+    /**
+     * Checks weather this shift is valid
+     */
     isValid = () => {
-        if (!this.props.schedule || !this
-            .props
-            .events[this.props.moment]) {
+        if (!this.props.schedule) { /* No schedules */
             return true;
         }
-        return !this
+        if ((this
             .props
-            .events[this.props.moment]
-            .find(e => e.user._id === this.props.schedule.user._id);
+            .events[this.props.moment] || []).filter(e=>e.type==="Vacation").length===0) { /* No vacations today */
+                return true;
+         }
+        return !(this
+            .props
+            .events[this.props.moment] || []).filter(e=>e.type==="Vacation")
+            .find(e => e.user._id === this.props.schedule.user._id); /* Check wether schedule user has a vacation today */
     }
 
     canDrop = item => {
@@ -65,11 +71,9 @@ class DayShift extends Component {
         const shiftdays = Array
             .from(moment.range(startWeek, endWeek).by('day'))
             .filter(m => this.props.shift.days.indexOf(m.day()) >= 0);
-        return this.props.shift.group && item
-            .groups
-            .map(g => g._id)
-            .indexOf(this.props.shift.group._id) !== -1 && 
-            !shiftdays.find(day=>this.props.events[day] && this.props.events[day].find(e=>e.user._id===item._id))
+        return this.props.shift.group /*This shift has a group*/
+        && item.groups.map(g => g._id).indexOf(this.props.shift.group._id) !== -1 /*The user belongs to the shift group*/
+        && !shiftdays.find(day=>this.props.events[day] && this.props.events[day].filter(e=>e.type==="Vacation") && this.props.events[day].filter(e=>e.type==="Vacation").find(e=>e.user._id===item._id)) /*User does not have vacation in shift days*/
     }
 
     render() {

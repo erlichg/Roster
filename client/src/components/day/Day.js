@@ -1,10 +1,11 @@
 import React, {Component} from "react";
 import PropTypes from "prop-types";
-import {Icon} from "semantic-ui-react";
+import {Label} from "semantic-ui-react";
 import _ from "lodash";
 import DayShift from "./DayShift-c";
 import DayEvent from "./DayEvent-c";
 import "./Day.css";
+import EventForm from "./EventForm";
 
 class Day extends Component {
     render() {
@@ -15,55 +16,109 @@ class Day extends Component {
             shifts,
             holidays,
             events,
-            addevent,
-            user,
             className,
-            showtypes,
-            allowedactions,
+            isadmin,
         } = this.props;
         const _schedules = _.concat(schedules, potentialschedules).filter(s => s.week === moment.week() && s.year === moment.year());
         const _shifts = shifts.filter(s => s.enabled && s.days.indexOf(moment.day()) >= 0);
         return (
             <div className={"day "+className} key={moment}>
+                <Label data-tip="Click to add event" className="add" fluid="true" corner='left' icon='plus' onClick={()=>{
+                    this.addEditEvent();
+                }}/>
                 <div className="top">
-                    <h5>{moment.format("D/M")}</h5>
-                    {showtypes.shifts ? _shifts.map(s => {
+                    <h5 style={{marginLeft: '15px'}}>{moment.format("D/M")}</h5>
+                    {_shifts.map(s => {
                         const match = _schedules.filter(sc => sc.shift._id === s._id);
                         const schedule = match.length === 0
                             ? undefined
                             : match[0];
                         return <DayShift key={s._id} moment={moment} shift={s} schedule={schedule}/>
-                    }) : null}
+                    })}
                 </div>
-                {allowedactions.addevent && (!events[moment] || events[moment]
-                    .filter(e => e.user._id === user._id)
-                    .length === 0)/*Only if addevent is present and user does not already have event for today*/
-                    ? <div className="middle onlyonhover">
-                            <Icon
-                                name="add square"
-                                size="huge"
-                                onClick={() => addevent({user: user._id, date: moment, type: 'Vacation'})}/>
-                        </div>
-                    : null}
                 <div className="bottom">
-                    {showtypes.events && events[moment]
-                        ? events[moment].map(e => <DayEvent user={user} key={e._id} event={e}/>)
+                    {events[moment] && events[moment].filter(e=>e.type==="Vacation")
+                        ? events[moment].filter(e=>e.type==="Vacation").map(e => <DayEvent key={e._id} event={e}/>)
                         : null}
-                    {showtypes.holidays && holidays[moment]
-                        ? holidays[moment].map(h => <h6 key={h.name} className="holiday">{h.name}</h6>)
+                    {[...(holidays[moment] || []), ...(events[moment] || []).filter(e=>e.type==="Holiday")]
+                        ? [...(holidays[moment] || []), ...(events[moment] || []).filter(e=>e.type==="Holiday")].map(h => {
+                        if (isadmin && h.type && h.type==="Holiday") { /* Only admin can modify holidays*/
+                            return <h6 key={h.name} className="userholiday" onClick={() => {
+                                this.addEditEvent(h);
+                            }}>{h.name}</h6>
+                        } else {
+                            return <h6 key={h.name} className="holiday">{h.name}</h6>
+                        }
+                    })
                         : null}
                 </div>
             </div>
 
         );
     }
+
+    addEditEvent = (event = {}) => {
+        const {showmodal, hidemodal, moment, users, addevent, removeevent, isadmin, user, events} = this.props;
+        if (!isadmin) { /* If regular user, can only add/delete vacation*/
+            if (Object.keys(event).length>0) {
+                removeevent(event._id);
+            } else if (!events[moment] || !events[moment].find(e=>e.type==="Vacation" && e.user._id.toString() === user._id.toString())) { /*Only if no vacation already*/
+                addevent({user: user._id.toString(), type: "Vacation", date: moment});
+            }
+            return;
+        }
+        const buttons = [
+            {
+                label: 'Cancel',
+                className: 'btn-danger',
+                callback: hidemodal
+            }, 
+            {
+                label: 'OK',
+                className: 'btn-success',
+                callback: () => {
+                    this
+                        .form
+                        .submitHandler();
+                }
+            }
+        ];
+        if (Object.keys(event).length>0) { /*Edit, so we need to add delete button*/
+            buttons.unshift({
+                label: 'Delete',
+                className: 'btn-danger',
+                callback: () => {
+                    removeevent(event._id);
+                    hidemodal();
+                }
+            })
+        }
+        showmodal({
+            title: event.name || "New event", 
+            message: 
+            (<EventForm readOnly={false} updateref={e => this.form = e} users={users} event={event} isadmin={isadmin} submit={data=>{
+                if (Object.keys(event).length>0) { /*Edit, so we need to remove first*/
+                    removeevent(event._id);
+                }
+                if (events[moment] && data.type === "Vacation" && events[moment].find(e=>e.type==="Vacation" && e.user._id.toString() === data.user)) {
+                    /* We already have a vaction for this user on this date */
+                } else if (events[moment] && data.type === "Holiday" && events[moment].find(e=>e.type==="Holiday" && e.name === data.name)) { 
+                    /* We already have a holiday with same name on this date */
+                } else {
+                    addevent({...data, date: moment});
+                }
+                hidemodal();
+            }}/>),
+            buttons
+        });
+    }
 }
 Day.propTypes = {
     moment: PropTypes.any.isRequired,
-    /*regular prop*/
     user: PropTypes.object.isRequired,
-    /*regular prop*/
+    isadmin: PropTypes.bool.isRequired,
     schedules: PropTypes.array.isRequired,
+    users: PropTypes.array.isRequired,
     potentialschedules: PropTypes.array.isRequired,
     shifts: PropTypes.array.isRequired,
     holidays: PropTypes.object.isRequired,
@@ -71,8 +126,8 @@ Day.propTypes = {
     addevent: PropTypes.func.isRequired,
     removeevent: PropTypes.func.isRequired,
     className: PropTypes.string.isRequired,
-    showtypes: PropTypes.object.isRequired,
-    allowedactions: PropTypes.object.isRequired,
+    showmodal: PropTypes.func.isRequired,
+    hidemodal: PropTypes.func.isRequired,
 };
 
 export default Day;

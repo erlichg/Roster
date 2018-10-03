@@ -41,7 +41,7 @@ class Home extends React.Component {
     }
 
     render() {
-        const {history} = this.props;
+        const {history, user} = this.props;
         const areShiftsFilledForNextMonth = this.areShiftsFilledForNextMonth();
         const areAllSchedulesValid = this.areAllSchedulesValid();
         const newMessages = this.newMessages();
@@ -94,6 +94,13 @@ class Home extends React.Component {
                         </Card.Content>
                     </Card>
                     <Card
+                        onClick={() => history.push({
+                            pathname: "/profile",
+                            state: {
+                                user,
+                                tab: 2
+                            }
+                        })}
                         color={newMessages
                         ? "red"
                         : "green"}>
@@ -116,6 +123,7 @@ class Home extends React.Component {
 Home.propTypes = {
     history: PropTypes.object.isRequired,
     events: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired,
 };
 
 export default Home;

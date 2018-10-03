@@ -7,7 +7,8 @@ const UserSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        default: ""
+        default: "",
+        unique: true
     },
     groups: {
         type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],

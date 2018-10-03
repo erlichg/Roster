@@ -13,7 +13,8 @@ class Modal extends React.Component {
         return (
             <M
                 style={{
-                position: 'initial'
+                position: 'initial',
+                overflow: 'initial'
             }}
                 open={modal}
                 onClose={hidemodal}

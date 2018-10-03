@@ -245,34 +245,33 @@ module.exports = {
                 const _schedules =
                     schedules || (await getSchedulesInRange(m, db));
                 const users = await db.find("Users");
-                const susers = _.concat(
-                    [],
-                    _schedules.map(schedules =>
-                        schedules
-                            .filter(
-                                schedule =>
-                                    _.intersectionBy(
-                                        schedule.user.groups,
-                                        groups,
-                                        g => g.toString()
-                                    ).length > 0
-                            )
-                            .map(s => s.user._id.toString())
-                    )
-                );
-                const histogram = users.map(
-                    u =>
-                        susers.filter(su => su.indexOf(u._id.toString()) !== -1)
-                            .length
-                );
-                if (_.max(histogram) - _.min(histogram) > 1) {
-                    throw Error(
-                        `Users schedules are not spread evenly:<br>${_.zipWith(
-                            users,
-                            histogram,
-                            (u, h) => `${u.name}: ${h}`
-                        ).join("<br>")}`
+                for (const group of groups) {
+                    const susers = _.concat(
+                        [],
+                        _schedules.map(schedules =>
+                            schedules
+                                .filter(
+                                    schedule =>
+                                       schedule.shift.group._id.toString() === group._id.toString()
+                                )
+                                .map(s => s.user._id.toString())
+                        )
                     );
+                    const histogram = users.filter(u=>u.groups.find(g=>g._id.toString()===group._id.toString())).map(
+                        u =>
+                            susers.filter(
+                                su => su.indexOf(u._id.toString()) !== -1
+                            ).length
+                    );
+                    if (_.max(histogram) - _.min(histogram) > 1) {
+                        throw Error(
+                            `Users schedules are not spread evenly:<br>${_.zipWith(
+                                users,
+                                histogram,
+                                (u, h) => `${u.name}: ${h}`
+                            ).join("<br>")}`
+                        );
+                    }
                 }
             }
         },

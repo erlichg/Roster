@@ -8,13 +8,14 @@ class DayEvent extends PureComponent {
         const {
             event,
             removeevent,
-            user
+            user,
+            isadmin,
         } = this.props;
         return (
             <div className="dayevent">
                 <span
                     onClick={() => {
-                    if (event.user._id !== user._id) {/*Removing someone elses event is not allowed*/
+                    if (!isadmin && event.user._id !== user._id) {/*Removing someone elses event is not allowed*/
                         return;
                     }
                     removeevent(event._id);
@@ -24,7 +25,7 @@ class DayEvent extends PureComponent {
                     cursor: event.user._id === user._id ? 'pointer' : 'default'
                 }}>
                 {`${event.type} (${event.user.name})`}
-                {event.user._id === user._id/*Only show delete icon if it's your own event*/
+                {isadmin || event.user._id === user._id/*Only show delete icon if it's your own event*/
                         ? <FontAwesomeIcon icon="trash-alt" className="delete"/>
                         : null
                 } 

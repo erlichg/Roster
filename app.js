@@ -24,6 +24,7 @@ const ConstraintsRouter = require("./routes/constraints");
 const MessagesRouter = require("./routes/Messages");
 const db = require("./db/db");
 
+const dev = process.env.env === "DEVELOPMENT";
 const app = express();
 
 app.use(logger("dev"));
@@ -51,8 +52,8 @@ passport.deserializeUser((user, done) => {
 app.use("/login", loginRouter);
 app.use("/logout", logoutRouter);
 app.use("/loggeduser", (req, res) => {
-    if (req.isAuthenticated()) {
-        const { user } = req;
+    if (dev || req.isAuthenticated()) {
+        const { user } = dev ? { user: { mail: "guy.erlich@emc.com" } } : req;
         db.find("Users", { email: user.mail.toLowerCase() }, [
             "groups",
             "role"

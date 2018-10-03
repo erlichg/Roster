@@ -4,6 +4,8 @@ import DayEvent from "./DayEvent";
 
 const mapStateToProps = state => ({
     events: state.events,
+    user: state.user,
+    isadmin: state.user.role.name === 'Admin',
 });
 
 const mapDispatchToProps = dispatch => ({

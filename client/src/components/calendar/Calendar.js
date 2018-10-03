@@ -35,26 +35,10 @@ class Calendar extends PureComponent {
 
     render() {
         const {
-            user,
-            showtypes = {},
-            allowedactions = {},
             onrangechange = () => {},
             moment,
             setmoment
         } = this.props;
-        const _showtypes = {
-            shifts: true,
-            events: true,
-            holidays: true,
-            ...showtypes
-        }
-        const _allowedactions = {
-            addschedule: true,
-            removeschedule: true,
-            addevent: true,
-            removeevent: true,
-            ...allowedactions
-        };
         const start = this.firstSundayOfMonth(moment);
         const end = this.lastSaturdayOfMonth(moment);
         const range = Array.from(_moment.range(start, end).by('day'));
@@ -83,7 +67,6 @@ class Calendar extends PureComponent {
                 <div id="calendar">
                     {DAYS.map(d => <label className="header" key={d}>{d}</label>)}
                     {range.map(m => (<Day
-                        user={user}
                         key={m}
                         moment={m}
                         className={m.month() !== moment.month()
@@ -91,17 +74,13 @@ class Calendar extends PureComponent {
                         : m.isSame(_moment().startOf('day'))
                             ? "today"
                             : ""}
-                        allowedactions={_allowedactions}
-                        showtypes={_showtypes}/>))}
+                        />))}
                 </div>
             </div>
         );
     }
 }
 Calendar.propTypes = {
-    user: PropTypes.object.isRequired,
-    showtypes: PropTypes.object,
-    allowedactions: PropTypes.object,
     onrangechange: PropTypes.func,
     moment: PropTypes.any.isRequired,
     setmoment: PropTypes.func.isRequired

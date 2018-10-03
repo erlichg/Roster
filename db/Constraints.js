@@ -16,7 +16,7 @@ const ConstraintSchema = new mongoose.Schema({
     },
     severity: {
         type: String,
-        enum: ["Info", "Warning", "Error"],
+        enum: ["Error", "Warning"],
         default: "Error"
     },
     enabled: {

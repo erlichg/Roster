@@ -5,6 +5,7 @@ import Home from "./Home";
 const mapStateToProps = state => ({
     shifts: state.shifts,
     users: state.users,
+    user: state.user,
     groups: state.groups,
     events: state.events,
     schedules: state.schedules,
