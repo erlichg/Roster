@@ -51,25 +51,245 @@ const product = arr => {
     return result;
 };
 
+const getPreviousScheduleThisWeek = (shift, day, sofar) => {
+    for (let i = 0; i < 7 /* day.day() */; i += 1) {
+        const ans = (sofar[moment(day).day(i)] || []).filter(
+            s => s.week && s.shift._id.toString() === shift._id.toString()
+        )[0];
+        if (ans) {
+            return ans;
+        }
+    }
+    return undefined;
+};
+/**
+ * Calculates the list of possible users for supplied shift in supplied day taking into account schedules so far
+ * @param {*} shift the shift
+ * @param {*} day the day
+ * @param {*} sofar schedules so far in the month
+ */
+const getPossibleUsers = (
+    shift,
+    day,
+    sofar,
+    users,
+    constraints,
+    events,
+    holidays,
+    schedules,
+    lastyearholidayschedules
+) => {
+    let possible;
+    const exists = schedules.find(
+        sc => sc.shift._id.toString() === shift._id.toString()
+    );
+    if (exists) {
+        possible = [exists.user];
+    } else {
+        const notSameWeekConstraints = constraints.filter(
+            c => c.type === "notSameWeek"
+        );
+        const previousschedule = getPreviousScheduleThisWeek(shift, day, sofar);
+        const groups = _.concat(...notSameWeekConstraints.map(c => c.groups));
+        if (
+            notSameWeekConstraints.length > 0 &&
+            previousschedule &&
+            uc.userInGroups(previousschedule.user, groups)
+        ) {
+            possible = [previousschedule.user];
+        } else {
+            possible = users.filter(
+                u => u.groups.indexOf(shift.group._id) !== -1
+            );
+        }
+    }
+
+    // filter users that already have a schedule today
+    const todayusers = (sofar[day] || []).map(schedule =>
+        schedule.user._id.toString()
+    );
+    possible = possible.filter(
+        u => todayusers.indexOf(u._id.toString()) === -1
+    );
+
+    // filter users that are on vacation today
+    const notOnVacationConstraints = constraints.filter(
+        c => c.type === "notOnVacation"
+    );
+    if (notOnVacationConstraints.length > 0) {
+        const groups = _.concat(...notOnVacationConstraints.map(c => c.groups));
+        // filter list of users to those that either don't belong in constraint groups or don't have any event today
+        possible = possible.filter(
+            u =>
+                !uc.userInGroups(u, groups) ||
+                !events.find(e => moment(e.date).isSame(day))
+        );
+    }
+
+    // filter users that were in same holiday last year (if today is a holiday)
+    const notConecutiveHolidayConstraints = constraints.filter(
+        c => c.type === "notConecutiveHoliday"
+    );
+    if (notConecutiveHolidayConstraints.length > 0) {
+        const groups = _.concat(
+            ...notConecutiveHolidayConstraints.map(c => c.groups)
+        );
+        possible = possible.filter(
+            u =>
+                !uc.userInGroups(u, groups) ||
+                !holidays[day] ||
+                holidays[day].filter(h => h.location === u.location).length ===
+                    0 ||
+                !holidays[day]
+                    .filter(h => h.location === u.location)
+                    .find(
+                        holiday =>
+                            lastyearholidayschedules[holiday.id] &&
+                            lastyearholidayschedules[holiday.id].find(
+                                uu => uu._id.toString() === u._id.toString()
+                            )
+                    )
+        );
+    }
+
+    // filter users that were last week
+    const notConsecutiveWeekConstraints = constraints.filter(
+        c => c.type === "notConsecutiveWeek"
+    );
+    if (notConsecutiveWeekConstraints.length > 0) {
+        const groups = _.concat(
+            ...notConsecutiveWeekConstraints.map(c => c.groups)
+        );
+        const userslastweek = _.uniq(
+            _.concat(
+                ...Array.from(
+                    moment
+                        .range(
+                            moment(day)
+                                .subtract(1, "weeks")
+                                .startOf("week"),
+                            moment(day)
+                                .subtract(1, "weeks")
+                                .endOf("week")
+                        )
+                        .by("day")
+                ).map(d =>
+                    (sofar[d] || [])
+                        .map(schedule => schedule.user)
+                        .filter(u => uc.userInGroups(u, groups))
+                        .map(u => u._id.toString())
+                )
+            )
+        );
+        possible = possible.filter(
+            u => userslastweek.indexOf(u._id.toString()) === -1
+        );
+    }
+
+    return _.shuffle(possible);
+};
+
+const rec = (
+    day,
+    sofar,
+    shifts,
+    users,
+    constraints,
+    events,
+    holidays,
+    schedules,
+    lastyearholidayschedules,
+    begin,
+    end
+) => {
+    console.log(Object.keys(sofar).length);
+    const shift = shifts.filter(
+        s =>
+            s.days.indexOf(day.day()) !== -1 &&
+            (sofar[day] || []).filter(
+                schedule => schedule.shift._id.toString() === s._id.toString()
+            ).length === 0
+    )[0];
+    if (!shift) {
+        if (moment(day).isSame(end)) {
+            // we've reached the end of the month
+            return sofar;
+        }
+        return rec(
+            moment(day).add(1, "days"),
+            sofar,
+            shifts,
+            users,
+            constraints,
+            events,
+            holidays,
+            schedules,
+            lastyearholidayschedules,
+            begin,
+            end
+        );
+    }
+    /* eslint-disable no-restricted-syntax */
+    for (const user of getPossibleUsers(
+        shift,
+        day,
+        sofar,
+        users,
+        constraints,
+        events,
+        holidays,
+        schedules[day] || [],
+        lastyearholidayschedules
+    )) {
+        // try this user with next recursion
+        const p = rec(
+            day,
+            {
+                ...sofar,
+                [day]: [
+                    ...(sofar[day] || []),
+                    {
+                        user,
+                        shift,
+                        week: moment(day).week(),
+                        year: moment(day).year()
+                    }
+                ]
+            },
+            shifts,
+            users,
+            constraints,
+            events,
+            holidays,
+            schedules,
+            lastyearholidayschedules,
+            begin,
+            end
+        );
+        if (p) {
+            // we are at 1st day and we have a positive possibility
+            return p;
+        }
+    }
+    /* eslint-enable */
+};
+
 router.get("/types", (req, res, next) => res.json(userConstraints));
 router.get("/autopopulate", async (req, res, next) => {
     const { m = moment() } = req.body;
-    const existing = await uc.getSchedulesInRange(m, db);
-    const weeks = _.range(
-        moment(m)
-            .startOf("month")
-            .week(),
-        moment(m)
-            .endOf("month")
-            .week() + 1
-    ).map(week =>
-        moment()
-            .year(m.year())
-            .week(week)
-            .startOf("week")
-    );
+    const allexisting = await uc.getAllSchedulesInRangeByDay(m, db); // a list by day of all schedules or exceptions if any
+    const begin = moment(m)
+        .startOf("month")
+        .startOf("week");
+    const end = moment(m)
+        .endOf("month")
+        .endOf("week")
+        .startOf("day");
     const events = await db.find("Events", {
-        date: { $gte: weeks[0], $lte: weeks[weeks.length - 1] }
+        date: {
+            $gte: begin,
+            $lte: end
+        }
     });
     const constraints = await db.find("Constraints", { enabled: true });
     const users = _.shuffle(await db.find("Users")); // shuffle to return different possibility each time
@@ -87,245 +307,28 @@ router.get("/autopopulate", async (req, res, next) => {
         moment(m).subtract(1, "years"),
         holidays
     );
-    const needed = weeks.map(w =>
-        shifts.map(s => {
-            const e = existing.find(sw =>
-                sw.find(
-                    sc =>
-                        sc.week === w.week() &&
-                        sc.year === w.year() &&
-                        sc.shift._id.toString() === s._id.toString()
-                )
-            );
-            return e
-                ? e.find(
-                      sc =>
-                          sc.week === w.week() &&
-                          sc.year === w.year() &&
-                          sc.shift._id.toString() === s._id.toString()
-                  )
-                : s;
-        })
-    );
-    const weekp = needed
-        .map((weekshifts, week) => {
-            const weekshiftsproduct = product(
-                weekshifts.map(shift => {
-                    if (shift.constructor.modelName === "Schedule") {
-                        return [shift.user];
-                    }
-                    let ans = users.filter(
-                        u => u.groups.indexOf(shift.group._id) !== -1
-                    );
-                    const notOnVacationConstraints = constraints.filter(
-                        c => c.type === "notOnVacation"
-                    );
-                    if (notOnVacationConstraints.length > 0) {
-                        const groups = _.concat(
-                            ...notOnVacationConstraints.map(c => c.groups)
-                        );
-                        ans = ans.filter(
-                            u =>
-                                !uc.userInGroups(u, groups) ||
-                                !uc.userHasEventsOnScedule(
-                                    {
-                                        week: weeks[week].week(),
-                                        year: weeks[week].year(),
-                                        user: u,
-                                        shift
-                                    },
-                                    events
-                                )
-                        );
-                    }
-                    const notConecutiveHolidayConstraints = constraints.filter(
-                        c => c.type === "notConecutiveHoliday"
-                    );
-                    if (notConecutiveHolidayConstraints.length > 0) {
-                        const groups = _.concat(
-                            ...notConecutiveHolidayConstraints.map(
-                                c => c.groups
-                            )
-                        );
-                        ans = ans.filter(
-                            u =>
-                                !uc.userInGroups(u, groups) ||
-                                !uc
-                                    .getUserHolidayInSchedule(
-                                        {
-                                            week: weeks[week].week(),
-                                            year: weeks[week].year(),
-                                            user: u,
-                                            shift
-                                        },
-                                        holidays
-                                    )
-                                    .find(
-                                        holiday =>
-                                            lastyearholidayschedules[
-                                                holiday.id
-                                            ] &&
-                                            lastyearholidayschedules[
-                                                holiday.id
-                                            ].find(
-                                                uu =>
-                                                    uu._id.toString() ===
-                                                    u._id.toString()
-                                            )
-                                    )
-                        );
-                    }
-                    return _.shuffle(ans);
-                })
-            );
-            return weekshiftsproduct;
-        })
-        .map(p => {
-            const notSameWeekConstraints = constraints.filter(
-                c => c.type === "notSameWeek"
-            );
-            if (notSameWeekConstraints.length > 0) {
-                const groups = _.concat(
-                    ...notSameWeekConstraints.map(c => c.groups)
-                );
-                return p.filter(
-                    _users =>
-                        !_users
-                            .filter(u => u && uc.userInGroups(u, groups))
-                            .hasDuplicates()
-                );
-            }
-            return p;
-        });
-    const possibilities = cartesianProduct(weekp);
-    try {
-        async.detect(
-            Array.from(possibilities),
-            (pp, callback) => {
-                if (res.headersSent) {
-                    throw Error();
-                }
-                const p = _.concat(
-                    _.assign(
-                        _.fill(new Array(shifts.length), undefined),
-                        existing[0].map(s => s.user)
-                    ),
-                    _.flatten(pp),
-                    _.assign(
-                        _.fill(new Array(shifts.length), undefined),
-                        existing[existing.length - 1].map(s => s.user)
-                    )
-                );
-                const notConsecutiveWeekConstraints = constraints.filter(
-                    c => c.type === "notConsecutiveWeek"
-                );
-                if (notConsecutiveWeekConstraints.length > 0) {
-                    const groups = _.concat(
-                        ...notConsecutiveWeekConstraints.map(c => c.groups)
-                    );
-                    // we now have extra 2 weeks
-                    const intersect = _.range(0, weeks.length + 1).find(w => {
-                        const users1 = p
-                            .slice(
-                                w * shifts.length,
-                                w * shifts.length + shifts.length
-                            )
-                            .filter(u => u && uc.userInGroups(u, groups));
-                        const users2 = p
-                            .slice(
-                                (w + 1) * shifts.length,
-                                (w + 1) * shifts.length + shifts.length
-                            )
-                            .filter(u => u && uc.userInGroups(u, groups));
-                        return (
-                            _.intersectionBy(users1, users2, u =>
-                                u._id.toString()
-                            ).length > 0
-                        );
-                    });
-                    if (intersect) {
-                        return callback(null, false);
-                    }
-                }
-                const leastUsedUserConstraints = constraints.filter(
-                    c => c.type === "leastUsedUser"
-                );
-                if (leastUsedUserConstraints.length > 0) {
-                    const groups = _.concat(
-                        ...leastUsedUserConstraints.map(c => c.groups)
-                    );
-                    if (
-                        !groups.find(group => {
-                            const histogram = {};
-                            p.map((u, i) => ({
-                                user: u,
-                                shift: shifts[i % shifts.length]
-                            }))
-                                .filter(
-                                    u =>
-                                        u.shift.group._id.toString() ===
-                                            group._id.toString() &&
-                                        u.user &&
-                                        u.user.groups.find(
-                                            g =>
-                                                g._id.toString() ===
-                                                group._id.toString()
-                                        )
-                                )
-                                .forEach(u => {
-                                    const current =
-                                        histogram[u.user._id.toString()] || 0;
-                                    histogram[u.user._id.toString()] =
-                                        current + u.shift.weight;
-                                });
 
-                            if (
-                                _.max(Object.values(histogram)) -
-                                    _.min(Object.values(histogram)) >
-                                1
-                            ) {
-                                callback(null, false);
-                                return true;
-                            }
-                            return false;
-                        })
-                    ) {
-                        return callback(null, true);
-                    }
-                }
-            },
-            (err, result) => {
-                if (result) {
-                    const ans = _.flatten(result)
-                        .map((user, i) => ({
-                            week: weeks[Math.floor(i / shifts.length)].week(),
-                            year: weeks[Math.floor(i / shifts.length)].year(),
-                            user,
-                            shift: shifts[i % shifts.length]
-                        }))
-                        .filter(
-                            schedule =>
-                                !existing.find(ws =>
-                                    ws.find(
-                                        s =>
-                                            s.shift._id.toString() ===
-                                                schedule.shift._id.toString() &&
-                                            s.week === schedule.week
-                                    )
-                                )
-                        );
-                    return res.json(ans);
-                }
-                return res.status(505).send("No match found");
-            }
+    try {
+        const ans = rec(
+            begin,
+            {},
+            shifts,
+            users,
+            constraints,
+            events,
+            holidays,
+            allexisting,
+            lastyearholidayschedules,
+            begin,
+            end
         );
-    } catch (err) {
-        if (res.headersSent) {
-            // do nothing since error is expected in case of match
-        } else {
-            console.error(err);
-            return res.status(505).send("No match found");
+        if (ans) {
+            return res.json(ans);
         }
+        return res.status(505).send("No match found");
+    } catch (err) {
+        console.error(err);
+        return res.status(505).send("No match found");
     }
 });
 router.post("/check/:id", (req, res, next) => {

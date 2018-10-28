@@ -4,6 +4,7 @@ import Day from "./Day";
 
 const mapStateToProps = state => ({
     schedules: state.schedules,
+    scheduleexceptions: state.scheduleexceptions,
     shifts: state.shifts,
     holidays: state.holidays,
     events: state.events,

@@ -32,6 +32,7 @@ class Schedules extends Component {
         const {
             schedules,
             potentialschedules,
+            scheduleexceptions,
             users,
             groups,
             moment,
@@ -50,7 +51,10 @@ class Schedules extends Component {
                 .endOf("month")
                 .week() + 1
         );
-        const weekschedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && weeks.indexOf(s.week) !== -1 && s.year === moment.year());
+        const weekschedules = _.concat(
+            _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && weeks.indexOf(s.week) !== -1 && s.year === moment.year()),
+            scheduleexceptions.filter(s => s.shift.enabled && weeks.indexOf(_moment(s.date).week()) !== -1 && _moment(s.date).year() === moment.year())
+        );
         return (
             <div id="schedules">
             <Dimmer active={busy}><Loader/></Dimmer>
@@ -155,6 +159,7 @@ class Schedules extends Component {
 }
 Schedules.propTypes = {
     schedules: PropTypes.array.isRequired,
+    scheduleexceptions: PropTypes.array.isRequired,
     potentialschedules: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
     groups: PropTypes.array.isRequired,

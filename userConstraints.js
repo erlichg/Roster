@@ -28,32 +28,52 @@ const getWeekRange = m =>
             .startOf("week")
     );
 
-const getSchedulesInRange = async (m, db, populate = ["shift", "user"]) => {
-    const weeks = getWeekRange(m);
-    const ans = new Array(weeks.length);
-    await weeks.asyncForEach(async (week, i) => {
-        ans[i] = await db.find(
-            "Schedules",
-            {
-                week: week.week(),
-                year: week.year()
-            },
-            populate
-        );
-        ans[i] = ans[i].filter(s => s.shift.enabled);
-    });
-    return ans;
-};
-
-const getSchedulesInMoment = (db, m, populate = ["shift"]) =>
-    db.find(
+const getAllSchedulesInRangeByDay = async (
+    m,
+    db,
+    populate = ["shift", "user"]
+) => {
+    const begin = moment(m).startOf("month");
+    const end = moment(m).endOf("month");
+    const schedules = await db.find(
         "Schedules",
         {
-            week: m.week(),
-            year: m.year()
+            week: { $gte: begin.week(), $lte: end.week() },
+            year: { $gte: begin.year(), $lte: end.year() }
         },
         populate
     );
+    const scheduleexceptions = await db.find(
+        "ScheduleExceptions",
+        {
+            date: { $gte: begin, $lte: end }
+        },
+        populate
+    );
+    return Array.from(moment.range(begin, end).by("day")).reduce((map, day) => {
+        map[day] = schedules
+            .filter(
+                sc =>
+                    sc.week === day.week() &&
+                    sc.shift.days.indexOf(day.day()) !== -1
+            )
+            .map(sc => {
+                const exception = scheduleexceptions.find(
+                    se =>
+                        se.shift._id.toString() === sc.shift._id.toString() &&
+                        moment(se.date).isSame(day)
+                );
+                return exception || sc;
+            });
+        return map;
+    }, {});
+};
+
+const userInGroups = (user, groups) =>
+    _.intersection(
+        user.groups.map(g => g.toString()),
+        groups.map(g => g.toString())
+    ).length > 0;
 
 const getScheduleDays = schedule =>
     schedule.shift.days.map(d =>
@@ -62,17 +82,6 @@ const getScheduleDays = schedule =>
             .week(schedule.week)
             .day(d)
             .startOf("day")
-    );
-
-const isDayInSchedule = (schedule, day) => getScheduleDays.indexOf(day) !== -1;
-
-const userHasEventsOnScedule = (schedule, events) =>
-    getScheduleDays(schedule).find(day =>
-        events.find(
-            e =>
-                moment(e.date).isSame(day) &&
-                e.user.toString() === schedule.user._id.toString()
-        )
     );
 
 /**
@@ -96,21 +105,82 @@ const getUserHolidayInSchedule = (schedule, holidays) =>
  * @param {*} holidays
  */
 const getHolidaySchedulesAtMomentByHoliday = async (db, m, holidays) => {
-    const schedules = await db.find("Schedules", { year: m.year() }, [
-        "shift",
-        "user"
-    ]);
+    const schedules = await getAllSchedulesInRangeByDay(m, db);
     const ans = {};
-    schedules.forEach(s =>
-        getUserHolidayInSchedule(s, holidays).forEach(holiday => {
-            if (!ans[holiday.id]) {
-                ans[holiday.id] = [];
-            }
-            ans[holiday.id].push(s.user);
-        })
-    );
+    Object.keys(schedules).forEach(day => {
+        if (schedules[day].length > 0 && holidays[day]) {
+            holidays[day].forEach(holiday => {
+                if (!ans[holiday.id]) {
+                    ans[holiday.id] = [];
+                }
+                schedules[day]
+                    .filter(s => s.user.location === holiday.location)
+                    .forEach(s => {
+                        ans[holiday.id].push(s.user);
+                    });
+            });
+        }
+    });
     return ans;
 };
+
+const getSchedulesInRange = async (m, db, populate = ["shift", "user"]) => {
+    const weeks = getWeekRange(m);
+    const ans = new Array(weeks.length);
+    await weeks.asyncForEach(async (week, i) => {
+        ans[i] = await db.find(
+            "Schedules",
+            {
+                week: week.week(),
+                year: week.year()
+            },
+            populate
+        );
+        ans[i] = ans[i].filter(s => s.shift.enabled);
+    });
+    return ans;
+};
+
+const getScheduleExceptionsInRange = async (
+    m,
+    db,
+    populate = ["shift", "user"]
+) => {
+    const weeks = getWeekRange(m);
+    const ans = new Array(weeks.length);
+    await weeks.asyncForEach(async (week, i) => {
+        ans[i] = await db.find(
+            "ScheduleExceptions",
+            {
+                date: { $gte: week.startOf("week"), $lte: week.endOf("week") }
+            },
+            populate
+        );
+        ans[i] = ans[i].filter(s => s.shift.enabled);
+    });
+    return ans;
+};
+
+const getSchedulesInMoment = (db, m, populate = ["shift"]) =>
+    db.find(
+        "Schedules",
+        {
+            week: m.week(),
+            year: m.year()
+        },
+        populate
+    );
+
+const isDayInSchedule = (schedule, day) => getScheduleDays.indexOf(day) !== -1;
+
+const userHasEventsOnScedule = (schedule, events) =>
+    getScheduleDays(schedule).find(day =>
+        events.find(
+            e =>
+                moment(e.date).isSame(day) &&
+                e.user.toString() === schedule.user._id.toString()
+        )
+    );
 
 /**
  * Returns array of moments of last year's holiday
@@ -125,14 +195,10 @@ const getLastYearHoliday = (day, holiday, holidays) =>
             holidays[m].find(h => h.id === holiday.id)
     );
 
-const userInGroups = (user, groups) =>
-    _.intersection(
-        user.groups.map(g => g.toString()),
-        groups.map(g => g.toString())
-    ).length > 0;
-
 module.exports = {
     getSchedulesInRange,
+    getScheduleExceptionsInRange,
+    getAllSchedulesInRangeByDay,
     getWeekRange,
     getSchedulesInMoment,
     getScheduleDays,
@@ -252,17 +318,24 @@ module.exports = {
                             schedules
                                 .filter(
                                     schedule =>
-                                       schedule.shift.group._id.toString() === group._id.toString()
+                                        schedule.shift.group._id.toString() ===
+                                        group._id.toString()
                                 )
                                 .map(s => s.user._id.toString())
                         )
                     );
-                    const histogram = users.filter(u=>u.groups.find(g=>g._id.toString()===group._id.toString())).map(
-                        u =>
-                            susers.filter(
-                                su => su.indexOf(u._id.toString()) !== -1
-                            ).length
-                    );
+                    const histogram = users
+                        .filter(u =>
+                            u.groups.find(
+                                g => g._id.toString() === group._id.toString()
+                            )
+                        )
+                        .map(
+                            u =>
+                                susers.filter(
+                                    su => su.indexOf(u._id.toString()) !== -1
+                                ).length
+                        );
                     if (_.max(histogram) - _.min(histogram) > 1) {
                         throw Error(
                             `Users schedules are not spread evenly:<br>${_.zipWith(

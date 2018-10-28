@@ -3,14 +3,17 @@ import { addobject, updateobject, removeobject, showmodal, hidemodal } from "../
 import DayShift from "./DayShift";
 
 const mapStateToProps = state => ({
-    schedules: state.schedules,
+    scheduleexceptions: state.scheduleexceptions,
     events: state.events,
 });
 
 const mapDispatchToProps = dispatch => ({
-    addschedule: group => dispatch(addobject("schedules", group)),
+    addschedule: data => dispatch(addobject("schedules", data)),
     removeschedule: id => dispatch(removeobject("schedules", id)),
     updateschedule: (id, data) => dispatch(updateobject("schedules", id, data)),
+    addscheduleexception: data => dispatch(addobject("scheduleexceptions", data)),
+    removescheduleexception: id => dispatch(removeobject("scheduleexceptions", id)),
+    updatescheduleexception: (id, data) => dispatch(updateobject("scheduleexceptions", id, data)),
     showmodal: children => dispatch(showmodal(children)),
     hidemodal: () => dispatch(hidemodal()),
 });

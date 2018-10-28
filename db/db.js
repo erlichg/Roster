@@ -3,6 +3,7 @@ const Groups = require("./Groups");
 const Users = require("./Users");
 const Shifts = require("./Shifts");
 const Schedules = require("./Schedules");
+const ScheduleExceptions = require("./ScheduleExceptions");
 const Events = require("./Events");
 const Roles = require("./Roles");
 const Constraints = require("./Constraints");
@@ -13,6 +14,7 @@ const tables = {
     Groups,
     Shifts,
     Schedules,
+    ScheduleExceptions,
     Events,
     Roles,
     Constraints,

@@ -28,6 +28,7 @@ export const defaultState = {
     groups: [],
     shifts: [],
     schedules: [],
+    scheduleexceptions: [],
     modal: false,
     modaloptions: {},
     holidays: {},

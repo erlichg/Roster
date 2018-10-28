@@ -3,10 +3,6 @@ import {setmoment} from "../../actions";
 import Calendar from "./Calendar";
 
 const mapStateToProps = state => ({
-    schedules: state.schedules,
-    shifts: state.shifts,
-    holidays: state.holidays,
-    events: state.events,
     moment: state.moment,
 });
 

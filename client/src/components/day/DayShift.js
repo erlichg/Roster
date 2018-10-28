@@ -51,7 +51,8 @@ class DayShift extends Component {
      * Checks weather this shift is valid
      */
     isValid = () => {
-        if (!this.props.schedule) { /* No schedules */
+        const actual = this.props.exception || this.props.schedule;
+        if (!actual) { /* No schedules */
             return true;
         }
         if ((this
@@ -62,7 +63,7 @@ class DayShift extends Component {
         return !(this
             .props
             .events[this.props.moment] || []).filter(e=>e.type==="Vacation")
-            .find(e => e.user._id === this.props.schedule.user._id); /* Check wether schedule user has a vacation today */
+            .find(e => e.user._id === actual.user._id); /* Check wether schedule user has a vacation today */
     }
 
     canDrop = item => {
@@ -81,30 +82,74 @@ class DayShift extends Component {
             moment,
             shift,
             schedule,
+            exception,
             addschedule,
             updateschedule,
-            removeschedule
+            removeschedule,
+            addscheduleexception,
+            updatescheduleexception,
+            removescheduleexception,
+            showmodal,
+            hidemodal,
+            scheduleexceptions,
         } = this.props;
         return <Droppable
             onDrop={user => {
             if (!this.canDrop(user)) {
                 return;
             }
-            if (schedule) {/*update*/
-                updateschedule(schedule._id, {
-                    week: moment.week(),
-                    year: moment.year(),
-                    shift: shift._id,
-                    user: user._id
-                });
-            } else {/*New*/
-                addschedule({
-                    week: moment.week(),
-                    year: moment.year(),
-                    shift: shift._id,
-                    user: user._id
-                });
-            }
+            showmodal({
+                title: "Scope",
+                message: "Do you want to modify this day only or entire shift?",
+                buttons: [
+                    {
+                        label: 'Today only',
+                        className: 'btn-success',
+                        callback: () => {
+                            hidemodal();
+                            if (exception) {
+                                updatescheduleexception(exception._id, {
+                                    date: moment,
+                                    shift: shift._id,
+                                    user: user._id
+                                });
+                            } else {/*New*/
+                                addscheduleexception({
+                                    date: moment,
+                                    shift: shift._id,
+                                    user: user._id
+                                });
+                            }
+                        }
+                    }, {
+                        label: 'Entire shift',
+                        className: 'btn-success',
+                        callback: () => {
+                            hidemodal();
+                            // remove all schedule exceptions for this shift if any
+                            const dates = shift.days.map(d=>Moment(moment).day(d));
+                            scheduleexceptions.filter(sc=>dates.filter(d=>d.isSame(sc.date)).length!==-1).forEach(sc=>{
+                                removescheduleexception(sc._id);
+                            });
+                            if (schedule) {
+                                updateschedule(schedule._id, {
+                                    week: moment.week(),
+                                    year: moment.year(),
+                                    shift: shift._id,
+                                    user: user._id
+                                });
+                            } else {/*New*/
+                                addschedule({
+                                    week: moment.week(),
+                                    year: moment.year(),
+                                    shift: shift._id,
+                                    user: user._id
+                                });
+                            }
+                        }
+                    }
+                ]
+            })
         }}>
             {(isOver, canDrop, item) => {
                 this.toggleHover(isOver);
@@ -113,6 +158,7 @@ class DayShift extends Component {
                         ? " candrop"
                         : " cantdrop"
                     : "";
+                const actual = exception || schedule;
                 return <span
                     id={moment}
                     style={{
@@ -123,28 +169,32 @@ class DayShift extends Component {
                     onMouseEnter={() => this.toggleHover(true)}
                     onMouseLeave={() => this.toggleHover(false)}
                     data-html={true}
-                    data-tip={schedule
-                    ? `Shift: ${shift.name}<br>User: ${schedule.user.name}<br>Group: ${shift.group
+                    data-tip={actual
+                    ? `Shift: ${shift.name}<br>User: ${actual.user.name}<br>Group: ${shift.group
                         ? shift.group.name
                         : 'Unassigned'}`
                     : `Shift: ${shift.name}<br>User: Unassigned<br>Group: ${shift.group
                         ? shift.group.name
                         : 'Unassigned'}`}
                     className={"dayshift_" + moment.week() + "_" + shift._id + " dayshift" + dropClass}>
-                    {schedule
-                        ? schedule.user.name
+                    {actual
+                        ? actual.user.name
                         : "Empty"}
-                    {schedule
+                    {actual
                         ? <Icon
                                 name="trash"
                                 className="delete"
                                 onClick={() => {
-                                removeschedule(schedule._id);
+                                    if (exception) {
+                                        removescheduleexception(exception._id);
+                                    } else {
+                                        removeschedule(schedule._id);
+                                    }
                             }}/>
                         : null}
                     {this.isValid()
                         ? null
-                        : <Icon name="exclamation triangle" className="notvalid" data-tip={`User ${this.props.schedule.user.name} is on vacation`}/>
+                        : <Icon name="exclamation triangle" className="notvalid" data-tip={`User ${this.props.actual.user.name} is on vacation`}/>
 }
                 </span>
             }
@@ -157,12 +207,17 @@ DayShift.propTypes = {
     addschedule: PropTypes.func.isRequired,
     removeschedule: PropTypes.func.isRequired,
     updateschedule: PropTypes.func.isRequired,
+    addscheduleexception: PropTypes.func.isRequired,
+    removescheduleexception: PropTypes.func.isRequired,
+    updatescheduleexception: PropTypes.func.isRequired,
     showmodal: PropTypes.func.isRequired,
     hidemodal: PropTypes.func.isRequired,
     shift: PropTypes.object.isRequired,
     schedule: PropTypes.object,
+    exception: PropTypes.object,
     moment: PropTypes.any.isRequired,
-    events: PropTypes.object.isRequired
+    events: PropTypes.object.isRequired,
+    scheduleexceptions: PropTypes.array.isRequired,
 };
 
 export default DayShift;

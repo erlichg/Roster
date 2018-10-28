@@ -6,6 +6,7 @@ import DayShift from "./DayShift-c";
 import DayEvent from "./DayEvent-c";
 import "./Day.css";
 import EventForm from "./EventForm";
+import _moment from "moment";
 
 class Day extends Component {
     render() {
@@ -13,13 +14,14 @@ class Day extends Component {
             moment,
             schedules,
             potentialschedules,
+            scheduleexceptions,
             shifts,
             holidays,
             events,
             className,
             isadmin,
         } = this.props;
-        const _schedules = _.concat(schedules, potentialschedules).filter(s => s.week === moment.week() && s.year === moment.year());
+        const _schedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && s.week === moment.week() && s.year === moment.year());
         const _shifts = shifts.filter(s => s.enabled && s.days.indexOf(moment.day()) >= 0);
         return (
             <div className={"day "+className} key={moment}>
@@ -28,13 +30,11 @@ class Day extends Component {
                 }}/>
                 <div className="top">
                     <h5 style={{marginLeft: '15px'}}>{moment.format("D/M")}</h5>
-                    {_shifts.map(s => {
-                        const match = _schedules.filter(sc => sc.shift._id === s._id);
-                        const schedule = match.length === 0
-                            ? undefined
-                            : match[0];
-                        return <DayShift key={s._id} moment={moment} shift={s} schedule={schedule}/>
-                    })}
+                    {_shifts.map(s =>
+                        <DayShift key={s._id} moment={moment} shift={s} 
+                        schedule={_schedules.filter(sc => sc.shift._id === s._id)[0]} 
+                        exception={scheduleexceptions.filter(sc=>sc.shift._id===s._id && _moment(sc.date).isSame(moment))[0]}/>
+                    )}
                 </div>
                 <div className="bottom">
                     {events[moment] && events[moment].filter(e=>e.type==="Vacation")
@@ -118,6 +118,7 @@ Day.propTypes = {
     user: PropTypes.object.isRequired,
     isadmin: PropTypes.bool.isRequired,
     schedules: PropTypes.array.isRequired,
+    scheduleexceptions: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
     potentialschedules: PropTypes.array.isRequired,
     shifts: PropTypes.array.isRequired,
