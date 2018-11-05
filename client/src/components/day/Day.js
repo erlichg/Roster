@@ -14,14 +14,13 @@ class Day extends Component {
             moment,
             schedules,
             potentialschedules,
-            scheduleexceptions,
             shifts,
             holidays,
             events,
             className,
             isadmin,
         } = this.props;
-        const _schedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && s.week === moment.week() && s.year === moment.year());
+        const _schedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isSame(moment));
         const _shifts = shifts.filter(s => s.enabled && s.days.indexOf(moment.day()) >= 0);
         return (
             <div className={"day "+className} key={moment}>
@@ -33,15 +32,15 @@ class Day extends Component {
                     {_shifts.map(s =>
                         <DayShift key={s._id} moment={moment} shift={s} 
                         schedule={_schedules.filter(sc => sc.shift._id === s._id)[0]} 
-                        exception={scheduleexceptions.filter(sc=>sc.shift._id===s._id && _moment(sc.date).isSame(moment))[0]}/>
+                        />
                     )}
                 </div>
                 <div className="bottom">
-                    {events[moment] && events[moment].filter(e=>e.type==="Vacation")
-                        ? events[moment].filter(e=>e.type==="Vacation").map(e => <DayEvent key={e._id} event={e}/>)
+                    {events[moment.format("D/M/Y")] && events[moment.format("D/M/Y")].filter(e=>e.type==="Vacation")
+                        ? events[moment.format("D/M/Y")].filter(e=>e.type==="Vacation").map(e => <DayEvent key={e._id} event={e}/>)
                         : null}
-                    {[...(holidays[moment] || []), ...(events[moment] || []).filter(e=>e.type==="Holiday")]
-                        ? [...(holidays[moment] || []), ...(events[moment] || []).filter(e=>e.type==="Holiday")].map(h => {
+                    {[...(holidays[moment.format("D/M/Y")] || []), ...(events[moment.format("D/M/Y")] || []).filter(e=>e.type==="Holiday")]
+                        ? [...(holidays[moment.format("D/M/Y")] || []), ...(events[moment.format("D/M/Y")] || []).filter(e=>e.type==="Holiday")].map(h => {
                         if (isadmin && h.type && h.type==="Holiday") { /* Only admin can modify holidays*/
                             return <h6 key={h.name} className="userholiday" onClick={() => {
                                 this.addEditEvent(h);
@@ -105,7 +104,7 @@ class Day extends Component {
                 } else if (events[moment] && data.type === "Holiday" && events[moment].find(e=>e.type==="Holiday" && e.name === data.name)) { 
                     /* We already have a holiday with same name on this date */
                 } else {
-                    addevent({...data, date: moment});
+                    addevent({...data, date: moment, id: data.name});
                 }
                 hidemodal();
             }}/>),
@@ -118,7 +117,6 @@ Day.propTypes = {
     user: PropTypes.object.isRequired,
     isadmin: PropTypes.bool.isRequired,
     schedules: PropTypes.array.isRequired,
-    scheduleexceptions: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
     potentialschedules: PropTypes.array.isRequired,
     shifts: PropTypes.array.isRequired,

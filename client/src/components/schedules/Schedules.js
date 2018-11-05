@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import Moment from 'moment';
 import {extendMoment} from 'moment-range';
-import {List, Button, Dimmer, Loader} from 'semantic-ui-react';
+import {Label, List, Button, Dimmer, Loader} from 'semantic-ui-react';
 import _ from "lodash";
 import "./Schedules.css";
 import {DragDropContext} from 'react-dnd';
@@ -32,7 +32,6 @@ class Schedules extends Component {
         const {
             schedules,
             potentialschedules,
-            scheduleexceptions,
             users,
             groups,
             moment,
@@ -43,18 +42,9 @@ class Schedules extends Component {
             applypotentialschedules,
             busy,
         } = this.props;
-        const weeks = _.range(
-            _moment(moment)
-                .startOf("month")
-                .week(),
-            _moment(moment)
-                .endOf("month")
-                .week() + 1
-        );
-        const weekschedules = _.concat(
-            _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && weeks.indexOf(s.week) !== -1 && s.year === moment.year()),
-            scheduleexceptions.filter(s => s.shift.enabled && weeks.indexOf(_moment(s.date).week()) !== -1 && _moment(s.date).year() === moment.year())
-        );
+        const begin = _moment(moment).startOf('month').startOf('week');
+        const end = _moment(moment).endOf('month').endOf('week');
+        const _schedules =_.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isBetween(begin, end, "()"));
         return (
             <div id="schedules">
             <Dimmer active={busy}><Loader/></Dimmer>
@@ -77,10 +67,11 @@ class Schedules extends Component {
                                                     : '1'
                                             }}>{u.name}</label>
                                             <div className="userschedulecontainer">
-                                                {weekschedules
+                                                <Label circular>
+                                                {_schedules
                                                     .filter(s => s.user && s.user._id === u._id)
-                                                    .map(s =>_.range(0,s.shift.weight).map((t,i)=><span key={i}
-                                                    className = "userschedule" style = {{backgroundColor: s.shift.color}}/>))}
+                                                    .map(s =>s.shift.weight).reduce((acc, i) => acc+i, 0)}
+                                                </Label>
                                             </div>
                                         </li>
                                     )}
@@ -159,7 +150,6 @@ class Schedules extends Component {
 }
 Schedules.propTypes = {
     schedules: PropTypes.array.isRequired,
-    scheduleexceptions: PropTypes.array.isRequired,
     potentialschedules: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
     groups: PropTypes.array.isRequired,

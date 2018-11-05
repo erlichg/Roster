@@ -5,66 +5,49 @@ const getHolidays = require("./client/src/holidays");
 
 const moment = MomentRange.extendMoment(Moment);
 
-const getScheduleMoment = schedule =>
-    moment()
-        .year(schedule.year)
-        .week(schedule.week)
-        .startOf("day");
-
-const getWeekRange = m =>
-    _.range(
-        moment(m)
-            .startOf("month")
-            .subtract(1, "weeks")
-            .week(),
-        moment(m)
-            .endOf("month")
-            .add(1, "weeks")
-            .week() + 1
-    ).map(week =>
-        moment()
-            .year(m.year())
-            .week(week)
-            .startOf("week")
-    );
+const getBegin = m =>
+    moment
+        .utc(m)
+        .startOf("month")
+        .startOf("week");
+const getEnd = m =>
+    moment
+        .utc(m)
+        .endOf("month")
+        .endOf("week");
 
 const getAllSchedulesInRangeByDay = async (
     m,
     db,
     populate = ["shift", "user"]
 ) => {
-    const begin = moment(m).startOf("month");
-    const end = moment(m).endOf("month");
+    const begin = getBegin(m);
+    const end = getEnd(m);
     const schedules = await db.find(
         "Schedules",
-        {
-            week: { $gte: begin.week(), $lte: end.week() },
-            year: { $gte: begin.year(), $lte: end.year() }
-        },
-        populate
-    );
-    const scheduleexceptions = await db.find(
-        "ScheduleExceptions",
         {
             date: { $gte: begin, $lte: end }
         },
         populate
     );
     return Array.from(moment.range(begin, end).by("day")).reduce((map, day) => {
-        map[day] = schedules
-            .filter(
-                sc =>
-                    sc.week === day.week() &&
-                    sc.shift.days.indexOf(day.day()) !== -1
-            )
-            .map(sc => {
-                const exception = scheduleexceptions.find(
-                    se =>
-                        se.shift._id.toString() === sc.shift._id.toString() &&
-                        moment(se.date).isSame(day)
-                );
-                return exception || sc;
-            });
+        map[day] = schedules.filter(sc => moment(sc.date).isSame(day));
+        return map;
+    }, {});
+};
+
+const getAllEventsInRangeByDay = async (m, db, populate = ["user"]) => {
+    const begin = getBegin();
+    const end = getEnd();
+    const events = await db.find(
+        "Events",
+        {
+            date: { $gte: begin, $lte: end }
+        },
+        populate
+    );
+    return Array.from(moment.range(begin, end).by("day")).reduce((map, day) => {
+        map[day] = events.filter(sc => moment(sc.date).isSame(day));
         return map;
     }, {});
 };
@@ -106,10 +89,14 @@ const getUserHolidayInSchedule = (schedule, holidays) =>
  */
 const getHolidaySchedulesAtMomentByHoliday = async (db, m, holidays) => {
     const schedules = await getAllSchedulesInRangeByDay(m, db);
+    const events = await db.find("Events", {}, ["user"]);
     const ans = {};
     Object.keys(schedules).forEach(day => {
-        if (schedules[day].length > 0 && holidays[day]) {
-            holidays[day].forEach(holiday => {
+        if (
+            schedules[day].length > 0 &&
+            holidays[moment(day).format("D/M/Y")]
+        ) {
+            holidays[moment(day).format("D/M/Y")].forEach(holiday => {
                 if (!ans[holiday.id]) {
                     ans[holiday.id] = [];
                 }
@@ -120,43 +107,22 @@ const getHolidaySchedulesAtMomentByHoliday = async (db, m, holidays) => {
                     });
             });
         }
-    });
-    return ans;
-};
-
-const getSchedulesInRange = async (m, db, populate = ["shift", "user"]) => {
-    const weeks = getWeekRange(m);
-    const ans = new Array(weeks.length);
-    await weeks.asyncForEach(async (week, i) => {
-        ans[i] = await db.find(
-            "Schedules",
-            {
-                week: week.week(),
-                year: week.year()
-            },
-            populate
-        );
-        ans[i] = ans[i].filter(s => s.shift.enabled);
-    });
-    return ans;
-};
-
-const getScheduleExceptionsInRange = async (
-    m,
-    db,
-    populate = ["shift", "user"]
-) => {
-    const weeks = getWeekRange(m);
-    const ans = new Array(weeks.length);
-    await weeks.asyncForEach(async (week, i) => {
-        ans[i] = await db.find(
-            "ScheduleExceptions",
-            {
-                date: { $gte: week.startOf("week"), $lte: week.endOf("week") }
-            },
-            populate
-        );
-        ans[i] = ans[i].filter(s => s.shift.enabled);
+        if (
+            schedules[day].length > 0 &&
+            events.find(
+                e => e.type === "Holiday" && moment(e.date).isSame(moment(day))
+            )
+        ) {
+            const holiday = events.find(
+                e => e.type === "Holiday" && moment(e.date).isSame(moment(day))
+            );
+            if (!ans[holiday.id]) {
+                ans[holiday.id] = [];
+            }
+            schedules[day].forEach(s => {
+                ans[holiday.id].push(s.user);
+            });
+        }
     });
     return ans;
 };
@@ -165,13 +131,10 @@ const getSchedulesInMoment = (db, m, populate = ["shift"]) =>
     db.find(
         "Schedules",
         {
-            week: m.week(),
-            year: m.year()
+            date: m
         },
         populate
     );
-
-const isDayInSchedule = (schedule, day) => getScheduleDays.indexOf(day) !== -1;
 
 const userHasEventsOnScedule = (schedule, events) =>
     getScheduleDays(schedule).find(day =>
@@ -196,10 +159,7 @@ const getLastYearHoliday = (day, holiday, holidays) =>
     );
 
 module.exports = {
-    getSchedulesInRange,
-    getScheduleExceptionsInRange,
     getAllSchedulesInRangeByDay,
-    getWeekRange,
     getSchedulesInMoment,
     getScheduleDays,
     userHasEventsOnScedule,
@@ -214,25 +174,29 @@ module.exports = {
                 "This constraint maintains that a user cannot have a shift if he is on vacation",
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
-                    schedules || (await getSchedulesInRange(m, db));
-                const range = getWeekRange(m);
-                const start = range[0];
-                const end = range[range.length - 1];
-                const events = await db.find("Events", {
-                    date: { $gte: start, $lte: end }
-                });
-                await _schedules.asyncForEach(async week => {
-                    await week.asyncForEach(async schedule => {
-                        if (userHasEventsOnScedule(schedule, events)) {
-                            throw Error(
-                                `User ${
-                                    schedule.user.name
-                                } has a shift on the week of ${getScheduleMoment(
-                                    schedule
-                                ).format("D/M")} while he is on vacation`
-                            );
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
+                const events = await getAllEventsInRangeByDay(m, db);
+                await Object.keys(_schedules).asyncForEach(async day => {
+                    await (_schedules[day] || []).asyncForEach(
+                        async schedule => {
+                            if (
+                                (events[day] || []).find(
+                                    e =>
+                                        e.type === "Vacation" &&
+                                        e.user._id.toString() ===
+                                            schedule.user.toString()
+                                )
+                            ) {
+                                throw Error(
+                                    `User ${
+                                        schedule.user.name
+                                    } has a shift on ${moment(day).format(
+                                        "D/M"
+                                    )} while he is on vacation`
+                                );
+                            }
                         }
-                    });
+                    );
                 });
             }
         },
@@ -242,31 +206,38 @@ module.exports = {
                 "This constraint maintains that no user has a shift 2 weeks in a row",
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
-                    schedules || (await getSchedulesInRange(m, db));
-                const users = _schedules.map(ws =>
-                    ws
-                        .map(s => s.user)
-                        .filter(
-                            u =>
-                                _.intersectionBy(u.groups, groups, g =>
-                                    g.toString()
-                                ).length > 0
-                        )
-                ); /* Array of arrays of users */
-                for (let i = 0; i < users.length - 1; i += 1) {
-                    const problems = _.intersectionBy(
-                        users[i],
-                        users[i + 1],
-                        u => u._id.toString()
-                    );
-                    if (problems.length !== 0) {
-                        throw Error(
-                            `Following users have shifts on consecutive weeks:<br>${problems
-                                .map(u => u.name)
-                                .join("<br>")}`
-                        );
-                    }
-                }
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
+                const users = {};
+                Object.keys(_schedules).forEach(day => {
+                    _schedules[day]
+                        .filter(schedule => userInGroups(schedule.user, groups))
+                        .forEach(schedule => {
+                            if (!users[moment(schedule.date).week()]) {
+                                users[moment(schedule.date).week()] = [];
+                            }
+                            users[moment(schedule.date).week()].push(
+                                schedule.user
+                            );
+                        });
+                });
+                Object.keys(users)
+                    .sort()
+                    .forEach(week => {
+                        if (users[week - 1]) {
+                            const problems = _.intersectionBy(
+                                users[week],
+                                users[week - 1],
+                                u => u._id.toString()
+                            );
+                            if (problems.length !== 0) {
+                                throw Error(
+                                    `Following users have shifts on consecutive weeks:<br>${problems
+                                        .map(u => u.name)
+                                        .join("<br>")}`
+                                );
+                            }
+                        }
+                    });
             }
         },
         notSameWeek: {
@@ -275,32 +246,33 @@ module.exports = {
                 "This constraint maintains that no user has more than 1 shift in the same week",
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
-                    schedules || (await getSchedulesInRange(m, db));
-                const users = _schedules.map(ws =>
-                    ws
-                        .map(s => s.user)
-                        .filter(
-                            u =>
-                                _.intersectionBy(u.groups, groups, g =>
-                                    g.toString()
-                                ).length > 0
-                        )
-                ); /* Array of arrays of users */
-                for (let i = 0; i < users.length; i += 1) {
-                    const problems = Object.entries(
-                        _.countBy(users[i], u => u._id.toString())
-                    )
-                        .filter(arr => arr[1] > 1)
-                        .map(arr => arr[0])
-                        .map(id => users[i].find(u => u._id.toString() === id));
-                    if (problems.length !== 0) {
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
+                const users = {};
+                Object.keys(_schedules).forEach(day => {
+                    _schedules[day]
+                        .filter(schedule => userInGroups(schedule.user, groups))
+                        .forEach(schedule => {
+                            if (!users[moment(schedule.date).week()]) {
+                                users[moment(schedule.date).week()] = [];
+                            }
+                            users[moment(schedule.date).week()].push(schedule);
+                        });
+                });
+                Object.keys(users).forEach(week => {
+                    const problems = _.uniqWith(
+                        users[week],
+                        (s1, s2) =>
+                            s1.user._id.toString() === s2.user._id.toString() &&
+                            s1.shift._id.toString() !== s2.shift._id.toString()
+                    ); /* we remove "duplicate" entries where the user is the same but shift is different */
+                    if (problems.length !== users[week].length) {
                         throw Error(
-                            `Following users have more than 1 shifts on the same week:<br>${problems
+                            `Following users have different shifts in same weeks:<br>${problems
                                 .map(u => u.name)
                                 .join("<br>")}`
                         );
                     }
-                }
+                });
             }
         },
         leastUsedUser: {
@@ -309,43 +281,38 @@ module.exports = {
                 'This constraint maintains that the users are "spread" evenly across all shifts',
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
-                    schedules || (await getSchedulesInRange(m, db));
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
                 const users = await db.find("Users");
+                /* eslint-disable no-restricted-syntax */
                 for (const group of groups) {
-                    const susers = _.concat(
-                        [],
-                        _schedules.map(schedules =>
-                            schedules
-                                .filter(
-                                    schedule =>
-                                        schedule.shift.group._id.toString() ===
-                                        group._id.toString()
-                                )
-                                .map(s => s.user._id.toString())
-                        )
-                    );
-                    const histogram = users
-                        .filter(u =>
-                            u.groups.find(
-                                g => g._id.toString() === group._id.toString()
+                    const susers = {};
+                    Object.keys(_schedules).forEach(day => {
+                        _schedules[day]
+                            .filter(schedule =>
+                                userInGroups(schedule.user, [group])
                             )
-                        )
-                        .map(
-                            u =>
-                                susers.filter(
-                                    su => su.indexOf(u._id.toString()) !== -1
-                                ).length
-                        );
-                    if (_.max(histogram) - _.min(histogram) > 1) {
-                        throw Error(
-                            `Users schedules are not spread evenly:<br>${_.zipWith(
-                                users,
-                                histogram,
-                                (u, h) => `${u.name}: ${h}`
-                            ).join("<br>")}`
-                        );
+                            .forEach(schedule => {
+                                if (!susers[schedule.user._id.toString()]) {
+                                    users[schedule.user._id.toString()] = 0;
+                                }
+                                susers[schedule.user._id.toString()] +=
+                                    schedule.weight;
+                            });
+                    });
+                    users.forEach(u => {
+                        if (!susers[u._id.toString()]) {
+                            susers[u._id.toString()] = 0;
+                        }
+                    });
+                    if (
+                        _.max(Object.values(susers)) -
+                            _.min(Object.values(susers)) >
+                        5
+                    ) {
+                        throw Error("Users schedules are not spread evenly");
                     }
                 }
+                /* eslint-enable */
             }
         },
         notConecutiveHoliday: {
@@ -354,74 +321,42 @@ module.exports = {
                 "This constraint maintains that no user has a shift on same holiday in consecutive years",
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
-                    schedules || (await getSchedulesInRange(m, db));
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
                 const holidays = await getHolidays();
+                const events = await getAllEventsInRangeByDay(m, db);
+                const lastyearholidayschedules = await getHolidaySchedulesAtMomentByHoliday(
+                    db,
+                    moment(m).subtract(1, "years"),
+                    holidays
+                );
                 const problems = [];
-                const alreadydid = {};
-                await _schedules.asyncForEach(async weekschedules => {
-                    await weekschedules
-                        .filter(
-                            schedule =>
-                                _.intersectionBy(
-                                    schedule.user.groups,
-                                    groups,
-                                    g => g.toString()
-                                ).length > 0
-                        )
-                        .asyncForEach(async schedule => {
-                            await schedule.shift.days.asyncForEach(async d => {
-                                const day = moment()
-                                    .year(schedule.year)
-                                    .week(schedule.week)
-                                    .day(d)
-                                    .startOf("day");
-                                const holiday = (holidays[day] || []).find(
+                await Object.keys(_schedules).asyncForEach(async day => {
+                    await (_schedules[day] || []).asyncForEach(
+                        async schedule => {
+                            const holiday = _.concat(
+                                (
+                                    holidays[moment(day).format("D/M/Y")] || []
+                                ).filter(
                                     h => h.location === schedule.user.location
-                                );
-                                if (holiday && !alreadydid[holiday.id]) {
-                                    alreadydid[holiday.id] = true;
-                                    const holidaylastyear = Object.keys(
-                                        holidays
-                                    ).filter(
-                                        m =>
-                                            moment(m).year() ===
-                                                day.year() - 1 &&
-                                            holidays[m].find(
-                                                h => h.id === holiday.id
-                                            )
-                                    );
-                                    await holidaylastyear.asyncForEach(
-                                        async dd => {
-                                            const lastyearschedules = await getSchedulesInMoment(
-                                                db,
-                                                moment(dd)
-                                            );
-                                            const c = lastyearschedules.find(
-                                                s =>
-                                                    s.shift.days.find(d =>
-                                                        moment()
-                                                            .year(s.year)
-                                                            .week(s.week)
-                                                            .day(d)
-                                                            .startOf("day")
-                                                            .isSame(moment(dd))
-                                                    )
-                                            );
-                                            if (
-                                                c &&
-                                                c.user.toString() ===
-                                                    schedule.user._id.toString()
-                                            ) {
-                                                problems.push({
-                                                    schedule,
-                                                    holiday
-                                                });
-                                            }
-                                        }
-                                    );
-                                }
-                            });
-                        });
+                                ),
+                                (events[day] || []).filter(
+                                    e => e.type === "Holiday"
+                                )
+                            )[0];
+                            if (
+                                holiday &&
+                                (lastyearholidayschedules[holiday.id] || [])
+                                    .map(u => u._id.toString())
+                                    .indexOf(schedule.user._id.toString()) !==
+                                    -1
+                            ) {
+                                problems.push({
+                                    schedule,
+                                    holiday
+                                });
+                            }
+                        }
+                    );
                 });
                 if (problems.length > 0) {
                     throw Error(

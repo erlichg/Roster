@@ -51,7 +51,7 @@ const getholidays = () =>
                 }))
             ),
         ).forEach(h => {
-            const m = moment(h.date).startOf("day");
+            const m = moment(h.date).startOf("day").format("D/M/Y");
             if (!holidays[m]) {
                 holidays[m] = [];
             }

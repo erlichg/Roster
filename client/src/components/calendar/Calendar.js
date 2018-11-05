@@ -11,27 +11,6 @@ const _moment = extendMoment(Moment);
 
 class Calendar extends PureComponent {
 
-    state = {
-        moment: this.props.moment,
-        start: this.firstSundayOfMonth(this.props.moment),
-        end: this.lastSaturdayOfMonth(this.props.moment)
-    };
-
-    firstSundayOfMonth(date) {
-        let m = _moment(date).startOf('month');
-        while (m.day() !== 0) {
-            m = m.subtract(1, 'days');
-        }
-        return m;
-    }
-
-    lastSaturdayOfMonth(date) {
-        let m = _moment(date).endOf('month');
-        while (m.day() !== 6) {
-            m = m.add(1, 'days');
-        }
-        return m;
-    }
 
     render() {
         const {
@@ -39,8 +18,8 @@ class Calendar extends PureComponent {
             moment,
             setmoment
         } = this.props;
-        const start = this.firstSundayOfMonth(moment);
-        const end = this.lastSaturdayOfMonth(moment);
+        const start = _moment.utc(moment).startOf('month').startOf('week');
+        const end =  _moment.utc(moment).endOf('month').endOf('week').startOf('day');
         const range = Array.from(_moment.range(start, end).by('day'));
         onrangechange(start, end);
         return (

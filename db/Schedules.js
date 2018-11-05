@@ -1,11 +1,8 @@
 const mongoose = require("mongoose");
 
 const ScheduleSchema = new mongoose.Schema({
-    week: {
-        type: Number
-    },
-    year: {
-        type: Number
+    date: {
+        type: Date
     },
     shift: {
         type: mongoose.Schema.Types.ObjectId,

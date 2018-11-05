@@ -54,13 +54,23 @@ const product = arr => {
 const getPreviousScheduleThisWeek = (shift, day, sofar) => {
     for (let i = 0; i < 7 /* day.day() */; i += 1) {
         const ans = (sofar[moment(day).day(i)] || []).filter(
-            s => s.week && s.shift._id.toString() === shift._id.toString()
+            s => s.shift._id.toString() === shift._id.toString()
         )[0];
         if (ans) {
             return ans;
         }
     }
     return undefined;
+};
+
+const getPreviousUsersThisWeek = (shift, day, sofar) => {
+    const users = [];
+    for (let i = 0; i < 7 /* day.day() */; i += 1) {
+        (sofar[moment(day).day(i)] || [])
+            .filter(s => s.shift._id.toString() !== shift._id.toString())
+            .forEach(sc => users.push(sc.user._id.toString()));
+    }
+    return _.uniq(users);
 };
 /**
  * Calculates the list of possible users for supplied shift in supplied day taking into account schedules so far
@@ -98,8 +108,11 @@ const getPossibleUsers = (
         ) {
             possible = [previousschedule.user];
         } else {
+            const previoususers = getPreviousUsersThisWeek(shift, day, sofar);
             possible = users.filter(
-                u => u.groups.indexOf(shift.group._id) !== -1
+                u =>
+                    u.groups.indexOf(shift.group._id) !== -1 &&
+                    previoususers.indexOf(u._id.toString()) === -1
             );
         }
     }
@@ -137,11 +150,27 @@ const getPossibleUsers = (
         possible = possible.filter(
             u =>
                 !uc.userInGroups(u, groups) ||
-                !holidays[day] ||
-                holidays[day].filter(h => h.location === u.location).length ===
-                    0 ||
-                !holidays[day]
+                !holidays[moment(day).format("D/M/Y")] ||
+                holidays[moment(day).format("D/M/Y")].filter(
+                    h => h.location === u.location
+                ).length === 0 ||
+                !holidays[moment(day).format("D/M/Y")]
                     .filter(h => h.location === u.location)
+                    .find(
+                        holiday =>
+                            lastyearholidayschedules[holiday.id] &&
+                            lastyearholidayschedules[holiday.id].find(
+                                uu => uu._id.toString() === u._id.toString()
+                            )
+                    )
+        );
+        possible = possible.filter(
+            u =>
+                !uc.userInGroups(u, groups) ||
+                !events[day] ||
+                events[day].filter(e => e.type === "Holiday").length === 0 ||
+                !events[day]
+                    .filter(e => e.type === "Holiday")
                     .find(
                         holiday =>
                             lastyearholidayschedules[holiday.id] &&
@@ -202,7 +231,6 @@ const rec = (
     begin,
     end
 ) => {
-    console.log(Object.keys(sofar).length);
     const shift = shifts.filter(
         s =>
             s.days.indexOf(day.day()) !== -1 &&
@@ -251,8 +279,7 @@ const rec = (
                     {
                         user,
                         shift,
-                        week: moment(day).week(),
-                        year: moment(day).year()
+                        date: day
                     }
                 ]
             },
@@ -267,8 +294,46 @@ const rec = (
             end
         );
         if (p) {
-            // we are at 1st day and we have a positive possibility
-            return p;
+            if (moment(day).isSame(end)) {
+                // we are at last day and we have a positive possibility
+                // need to check final constraint - fairness
+                const leastUsedUserConstraints = constraints.filter(
+                    c => c.type === "leastUsedUser"
+                );
+                if (leastUsedUserConstraints.length > 0) {
+                    const groups = _.concat(
+                        ...leastUsedUserConstraints.map(c => c.groups)
+                    );
+                    const histogram = _.flatMap(p)
+                        .filter(schedule =>
+                            uc.userInGroups(schedule.user, groups)
+                        )
+                        .reduce((map, schedule) => {
+                            if (!map[schedule.user._id.toString()]) {
+                                map[schedule.user._id.toString()] = 0;
+                            }
+                            map[schedule.user._id.toString()] +=
+                                schedule.shift.weight;
+                            return map;
+                        }, {});
+                    users.filter(u => uc.userInGroups(u, groups)).forEach(u => {
+                        if (!histogram[u._id.toString()]) {
+                            histogram[u._id.toString()] = 0;
+                        }
+                    });
+                    if (
+                        _.max(Object.values(histogram)) -
+                            _.min(Object.values(histogram)) <
+                        5
+                    ) {
+                        return _.flatMap(p);
+                    }
+                } else {
+                    return _.flatMap(p);
+                }
+            } else {
+                return p;
+            }
         }
     }
     /* eslint-enable */
@@ -278,10 +343,13 @@ router.get("/types", (req, res, next) => res.json(userConstraints));
 router.get("/autopopulate", async (req, res, next) => {
     const { m = moment() } = req.body;
     const allexisting = await uc.getAllSchedulesInRangeByDay(m, db); // a list by day of all schedules or exceptions if any
-    const begin = moment(m)
+    const copy = _.clone(allexisting);
+    const begin = moment
+        .utc(m)
         .startOf("month")
         .startOf("week");
-    const end = moment(m)
+    const end = moment
+        .utc(m)
         .endOf("month")
         .endOf("week")
         .startOf("day");
@@ -323,7 +391,16 @@ router.get("/autopopulate", async (req, res, next) => {
             end
         );
         if (ans) {
-            return res.json(ans);
+            return res.json(
+                _.xorBy(
+                    _.flatMap(copy),
+                    ans,
+                    a =>
+                        `${a.shift._id.toString()}_${moment(a.date).format(
+                            "D/M/Y"
+                        )}`
+                )
+            );
         }
         return res.status(505).send("No match found");
     } catch (err) {

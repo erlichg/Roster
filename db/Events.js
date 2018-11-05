@@ -16,6 +16,9 @@ const EventsSchema = new mongoose.Schema({
     name: {
         type: String,
         default: ""
+    },
+    id: {
+        type: String
     }
 });
 const Events = mongoose.model("Event", EventsSchema);

@@ -71,10 +71,10 @@ export const {
             events.forEach(e => {
                 // if (moment(e.date).isBetween(this.state.start, this.state.end, null, '[]')) {
                 const m = moment(e.date).startOf('day');
-                if (!events_dict[m]) {
-                    events_dict[m] = [];
+                if (!events_dict[m.format("D/M/Y")]) {
+                    events_dict[m.format("D/M/Y")] = [];
                 }
-                events_dict[m].push(e);
+                events_dict[m.format("D/M/Y")].push(e);
                 // }
             });
             return events_dict;
@@ -88,8 +88,8 @@ export const {
         method: "post",
         post: (events, event) => {
             const m = moment(event.date).startOf('day');
-            const arr = events[m] || [];
-            return {...events, [m]:[...arr, event]};
+            const arr = events[m.format("D/M/Y")] || [];
+            return {...events, [m.format("D/M/Y")]:[...arr, event]};
         }
     }),
     REMOVEEVENT: id => ({
@@ -99,7 +99,7 @@ export const {
         method: "delete",
         post: (events, event) => {
             const m = moment(event.date).startOf('day');
-            return {...events, [m]:events[m].filter(e=>e._id!==event._id)};
+            return {...events, [m.format("D/M/Y")]:events[m.format("D/M/Y")].filter(e=>e._id!==event._id)};
         }
     }),
     SETMOMENT: m => m,

@@ -15,17 +15,17 @@ class DayEvent extends PureComponent {
             <div className="dayevent">
                 <span
                     onClick={() => {
-                    if (!isadmin && event.user._id !== user._id) {/*Removing someone elses event is not allowed*/
+                    if (!isadmin && (!event.user || event.user._id !== user._id)) {/*Removing someone elses event is not allowed*/
                         return;
                     }
                     removeevent(event._id);
                 }}
                     style={{
                     backgroundColor: 'cornflowerblue',
-                    cursor: event.user._id === user._id ? 'pointer' : 'default'
+                    cursor: event.user && event.user._id === user._id ? 'pointer' : 'default'
                 }}>
-                {`${event.type} (${event.user.name})`}
-                {isadmin || event.user._id === user._id/*Only show delete icon if it's your own event*/
+                {`${event.type} ${event.user ? '('+event.user.name+')' : ''}`}
+                {isadmin || (event.user && event.user._id === user._id)/*Only show delete icon if it's your own event*/
                         ? <FontAwesomeIcon icon="trash-alt" className="delete"/>
                         : null
                 } 

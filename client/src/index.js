@@ -22,7 +22,6 @@ store.dispatch(getuser());
 store.dispatch(getevents());
 store.dispatch(getobjects("shifts"));
 store.dispatch(getobjects("schedules"));
-store.dispatch(getobjects("scheduleexceptions"));
 store.dispatch(getobjects("users"));
 store.dispatch(getobjects("groups"));
 store.dispatch(getobjects("roles"));

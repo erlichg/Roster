@@ -4,7 +4,6 @@ import {checkconstraint, getobjects, autopopulate, clearpotentialschedules, addo
 
 const mapStateToProps = state => ({
     schedules: state.schedules,
-    scheduleexceptions: state.scheduleexceptions,
     potentialschedules: state.potentialschedules,
     users: state.users,
     groups: state.groups,
