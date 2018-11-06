@@ -135,7 +135,12 @@ const getPossibleUsers = (
         possible = possible.filter(
             u =>
                 !uc.userInGroups(u, groups) ||
-                !events.find(e => moment(e.date).isSame(day))
+                !events.find(
+                    e =>
+                        e.type === "Vacation" &&
+                        moment(e.date).isSame(day) &&
+                        e.user._id.toString() === u._id.toString()
+                )
         );
     }
 
@@ -328,12 +333,11 @@ const rec = (
                     ) {
                         return _.flatMap(p);
                     }
-                } else {
-                    return _.flatMap(p);
+                    return undefined;
                 }
-            } else {
-                return p;
+                return _.flatMap(p);
             }
+            return p;
         }
     }
     /* eslint-enable */
