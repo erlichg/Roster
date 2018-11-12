@@ -17,7 +17,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     checkconstraint: id => dispatch(checkconstraint(id)),
     getconstraints: () => dispatch(getobjects("constraints")),
-    autopopulate: () => dispatch(autopopulate()),
+    autopopulate: m => dispatch(autopopulate(m)),
     clearpotentialschedules: () => dispatch(clearpotentialschedules()),
     applypotentialschedules: potentialschedules => {
         potentialschedules.forEach(s=>dispatch(addobject("schedules", s)));

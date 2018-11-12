@@ -54,7 +54,7 @@ class Schedules extends Component {
                         <h5>{g.name}</h5>
                         <ul>
                             {users.filter(u => u.groups.map(g => g._id).indexOf(g._id) !== -1).map(u => (
-                                <Draggable key={u._id} data={u}>
+                                <Draggable disabled={potentialschedules.length>0} key={u._id} data={u}>
                                     {isDragging => (
                                         <li
                                             className={isDragging
@@ -132,7 +132,7 @@ class Schedules extends Component {
                     </List>
                     <div id="actions">
                     <h4>Actions</h4>
-                    <Button onClick={autopopulate}>Auto arrange</Button>
+                    <Button onClick={() => autopopulate(moment)} disabled={potentialschedules.length>0}>Auto arrange</Button>
                     {potentialschedules.length>0
                         ? [
                         <Button negative key="revert" onClick={clearpotentialschedules}>Revert</Button>,

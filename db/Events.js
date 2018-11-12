@@ -19,6 +19,9 @@ const EventsSchema = new mongoose.Schema({
     },
     id: {
         type: String
+    },
+    location: {
+        type: String
     }
 });
 const Events = mongoose.model("Event", EventsSchema);

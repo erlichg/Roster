@@ -2,7 +2,6 @@ const express = require("express");
 const Moment = require("moment");
 const MomentRange = require("moment-range");
 const _ = require("lodash");
-const async = require("async");
 const db = require("../db/db");
 const uc = require("../userConstraints");
 const getHolidays = require("../client/src/holidays");
@@ -14,20 +13,12 @@ const table = "Constraints";
 const populate = ["groups"];
 const router = express.Router();
 
-function cartesianProduct(arrays) {
-    const current = new Array(arrays.length);
-    return (function* backtracking(index) {
-        if (index === arrays.length) yield current.slice();
-        else
-            for (const num of arrays[index]) {
-                current[index] = num;
-                yield* backtracking(index + 1);
-            }
-    })(0);
+class TimeoutError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "TimeoutError";
+    }
 }
-// for (const item of cartesianProduct([1, 2], [10, 20], [100, 200, 300])) {
-//     console.log(`[${item.join(", ")}]`);
-// }
 
 const product = arr => {
     if (arr.length === 0) {
@@ -51,12 +42,21 @@ const product = arr => {
     return result;
 };
 
-const getPreviousScheduleThisWeek = (shift, day, sofar) => {
-    for (let i = 0; i < 7 /* day.day() */; i += 1) {
-        const ans = (sofar[moment(day).day(i)] || []).filter(
+const isHoliday = (day, location, holidays) =>
+    holidays[moment(day).format("D/M/Y")] &&
+    holidays[moment(day).format("D/M/Y")].filter(h => h.location === location)
+        .length > 0;
+
+const getPreviousScheduleThisWeek = (shift, day, sofar, holidays) => {
+    for (let i = 6; i >= 0 /* day.day() */; i -= 1) {
+        const ans = (sofar[moment(day).day(i)] || []).find(
             s => s.shift._id.toString() === shift._id.toString()
-        )[0];
-        if (ans) {
+        );
+        if (
+            ans &&
+            isHoliday(ans.date, ans.user.location, holidays) ===
+                isHoliday(day, ans.user.location, holidays)
+        ) {
             return ans;
         }
     }
@@ -99,7 +99,12 @@ const getPossibleUsers = (
         const notSameWeekConstraints = constraints.filter(
             c => c.type === "notSameWeek"
         );
-        const previousschedule = getPreviousScheduleThisWeek(shift, day, sofar);
+        const previousschedule = getPreviousScheduleThisWeek(
+            shift,
+            day,
+            sofar,
+            holidays
+        );
         const groups = _.concat(...notSameWeekConstraints.map(c => c.groups));
         if (
             notSameWeekConstraints.length > 0 &&
@@ -219,8 +224,22 @@ const getPossibleUsers = (
             u => userslastweek.indexOf(u._id.toString()) === -1
         );
     }
-
-    return _.shuffle(possible);
+    const histogram = possible.reduce((map, user) => {
+        map[user._id.toString()] = 0;
+        return map;
+    }, {});
+    Object.values(sofar).forEach(day => {
+        day.forEach(schedule => {
+            const id = schedule.user._id.toString();
+            const weight = schedule.shift.weight;
+            if (id in histogram) {
+                histogram[id] += weight;
+            }
+        });
+    });
+    return Object.keys(histogram)
+        .sort((a, b) => histogram[a] - histogram[b])
+        .map(id => possible.find(u => u._id.toString() === id));
 };
 
 const rec = (
@@ -234,8 +253,12 @@ const rec = (
     schedules,
     lastyearholidayschedules,
     begin,
-    end
+    end,
+    start
 ) => {
+    if (new Date().getTime() - start.getTime() > 10000) {
+        throw new TimeoutError();
+    }
     const shift = shifts.filter(
         s =>
             s.days.indexOf(day.day()) !== -1 &&
@@ -259,7 +282,8 @@ const rec = (
             schedules,
             lastyearholidayschedules,
             begin,
-            end
+            end,
+            start
         );
     }
     /* eslint-disable no-restricted-syntax */
@@ -296,7 +320,8 @@ const rec = (
             schedules,
             lastyearholidayschedules,
             begin,
-            end
+            end,
+            start
         );
         if (p) {
             if (moment(day).isSame(end)) {
@@ -329,7 +354,7 @@ const rec = (
                     if (
                         _.max(Object.values(histogram)) -
                             _.min(Object.values(histogram)) <
-                        5
+                        7
                     ) {
                         return _.flatMap(p);
                     }
@@ -344,7 +369,7 @@ const rec = (
 };
 
 router.get("/types", (req, res, next) => res.json(userConstraints));
-router.get("/autopopulate", async (req, res, next) => {
+router.post("/autopopulate", async (req, res, next) => {
     const { m = moment() } = req.body;
     const allexisting = await uc.getAllSchedulesInRangeByDay(m, db); // a list by day of all schedules or exceptions if any
     const copy = _.clone(allexisting);
@@ -374,6 +399,12 @@ router.get("/autopopulate", async (req, res, next) => {
         ["group"]
     );
     const holidays = await getHolidays();
+    events.filter(e => e.type === "Holiday").forEach(e => {
+        if (!holidays[moment(e.date).format("D/M/Y")]) {
+            holidays[moment(e.date).format("D/M/Y")] = [];
+        }
+        holidays[moment(e.date).format("D/M/Y")].push(e);
+    });
     const lastyearholidayschedules = await uc.getHolidaySchedulesAtMomentByHoliday(
         db,
         moment(m).subtract(1, "years"),
@@ -392,7 +423,8 @@ router.get("/autopopulate", async (req, res, next) => {
             allexisting,
             lastyearholidayschedules,
             begin,
-            end
+            end,
+            new Date()
         );
         if (ans) {
             return res.json(
@@ -409,6 +441,9 @@ router.get("/autopopulate", async (req, res, next) => {
         return res.status(505).send("No match found");
     } catch (err) {
         console.error(err);
+        if (err instanceof TimeoutError) {
+            return res.status(505).send("Request timed-out");
+        }
         return res.status(505).send("No match found");
     }
 });

@@ -13,6 +13,7 @@ class EventForm extends React.PureComponent {
             user: event.user ? event.user._id.toString() : undefined,
             type: event.type || undefined,
             name: event.name || undefined,
+            location: event.location || 'Israel',
         }
     }
     
@@ -24,7 +25,7 @@ class EventForm extends React.PureComponent {
             updateref = () => {},
         } = this.props;
         return (
-            <F ref={e => updateref(e)} submit={() => submit(this.state)} validate={() => this.state.type && ((this.state.type==="Holiday" && this.state.name) || (this.state.type==="Vacation" && this.state.user))}>
+            <F ref={e => updateref(e)} submit={() => submit(this.state)} validate={() => this.state.type && ((this.state.type==="Holiday" && this.state.name && this.state.location) || (this.state.type==="Vacation" && this.state.user))}>
             <Form.Dropdown
                 onChange={this.handleChange}
                 name="type"
@@ -52,8 +53,8 @@ class EventForm extends React.PureComponent {
             /> 
             : 
             this.state.type==="Holiday" ?
-            <Form.Input
-            onChange={this.handleChange}
+            [<Form.Input
+                onChange={this.handleChange}
                 name="name"
                 inline
                 fluid
@@ -61,7 +62,20 @@ class EventForm extends React.PureComponent {
                 required
                 validate="true"
                 defaultValue={this.state.name}
+            />,
+            <Form.Dropdown
+                onChange={this.handleChange}
+                name="location"
+                inline
+                fluid
+                selection
+                label="Location"
+                required
+                validate="true"
+                options={[{text: 'Israel', value: 'Israel'}, {text: 'US', value: 'US'}]}
+                defaultValue={this.state.location || 'Israel'}
             />
+            ]
             : null
             }
             </F>

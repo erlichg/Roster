@@ -164,6 +164,21 @@ export const reducer = handleActions({
     })
 }, defaultState);
 
+function fetchWithTimeout( url, options, timeout ) {
+    return new Promise( (resolve, reject) => {
+        // Set timeout timer
+        let timer = setTimeout(
+            () => reject( new Error('Request timed out') ),
+            timeout
+        );
+
+        fetch( url, options ).then(
+            response => resolve( response ),
+            err => reject( err )
+        ).finally( () => clearTimeout(timer) );
+    })
+}
+
 // Middleware method to post/get data from server It runs anytime you dispatch
 // an action with payload.async=true. Be aware the action gets called before and
 // after the middleware so expect an empty result in the action

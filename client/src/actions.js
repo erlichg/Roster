@@ -115,10 +115,11 @@ export const {
         data: { m },
         method: "post"
     }),
-    AUTOPOPULATE: () => ({
+    AUTOPOPULATE: (m) => ({
         async: true,
         url: "/api/constraints/autopopulate",
-        method: "get"
+        data: { m },
+        method: "post"
     }),
     CLEARPOTENTIALSCHEDULES: () => ({}),
     SETERROR: error => ({error}),

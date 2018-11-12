@@ -6,6 +6,9 @@ import "./Draggable.css";
 const source = {
     beginDrag(props) {
         return props.data;
+    },
+    canDrag(props, monitor) {
+        return 'disabled' in props ? !props.disabled : true;
     }
 };
 
@@ -29,6 +32,7 @@ class Draggable extends React.Component {
 
 Draggable.propTypes = {
     data: PropTypes.any.isRequired,
+    disabled: PropTypes.bool,
     connectDragSource: PropTypes.func.isRequired,
     isDragging: PropTypes.bool.isRequired
 }
