@@ -89,37 +89,35 @@ const getPossibleUsers = (
     schedules,
     lastyearholidayschedules
 ) => {
-    let possible;
+    let possible = users.filter(u => u.groups.indexOf(shift.group._id) !== -1);
     const exists = schedules.find(
         sc => sc.shift._id.toString() === shift._id.toString()
     );
     if (exists) {
         possible = [exists.user];
     } else {
-        const notSameWeekConstraints = constraints.filter(
-            c => c.type === "notSameWeek"
-        );
         const previousschedule = getPreviousScheduleThisWeek(
             shift,
             day,
             sofar,
             holidays
         );
-        const groups = _.concat(...notSameWeekConstraints.map(c => c.groups));
-        if (
-            notSameWeekConstraints.length > 0 &&
-            previousschedule &&
-            uc.userInGroups(previousschedule.user, groups)
-        ) {
+        if (previousschedule) {
             possible = [previousschedule.user];
-        } else {
-            const previoususers = getPreviousUsersThisWeek(shift, day, sofar);
-            possible = users.filter(
-                u =>
-                    u.groups.indexOf(shift.group._id) !== -1 &&
-                    previoususers.indexOf(u._id.toString()) === -1
-            );
         }
+    }
+
+    const notSameWeekConstraints = constraints.filter(
+        c => c.type === "notSameWeek"
+    );
+    if (notSameWeekConstraints.length > 0) {
+        const groups = _.concat(...notSameWeekConstraints.map(c => c.groups));
+        const previoususers = getPreviousUsersThisWeek(shift, day, sofar);
+        possible = possible.filter(
+            u =>
+                !uc.userInGroups(u, groups) ||
+                previoususers.indexOf(u._id.toString()) === -1
+        );
     }
 
     // filter users that already have a schedule today
@@ -256,9 +254,9 @@ const rec = (
     end,
     start
 ) => {
-    if (new Date().getTime() - start.getTime() > 10000) {
-        throw new TimeoutError();
-    }
+    // if (new Date().getTime() - start.getTime() > 10000) {
+    //     throw new TimeoutError();
+    // }
     const shift = shifts.filter(
         s =>
             s.days.indexOf(day.day()) !== -1 &&
