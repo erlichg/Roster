@@ -273,9 +273,9 @@ const rec = (
     end,
     start
 ) => {
-    // if (new Date().getTime() - start.getTime() > 10000) {
-    //     throw new TimeoutError();
-    // }
+    if (new Date().getTime() - start.getTime() > 10000) {
+        throw new TimeoutError();
+    }
     const shift = shifts.filter(
         s =>
             s.days.indexOf(day.day()) !== -1 &&
