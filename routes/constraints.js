@@ -47,11 +47,29 @@ const isHoliday = (day, location, holidays) =>
     holidays[moment(day).format("D/M/Y")].filter(h => h.location === location)
         .length > 0;
 
-const getPreviousScheduleThisWeek = (shift, day, sofar, holidays) => {
+const getPreviousScheduleThisWeek = (
+    shift,
+    day,
+    sofar,
+    holidays,
+    constraints
+) => {
     for (let i = 6; i >= 0 /* day.day() */; i -= 1) {
         const ans = (sofar[moment(day).day(i)] || []).find(
             s => s.shift._id.toString() === shift._id.toString()
         );
+        // filter users that were in same holiday last year (if today is a holiday)
+        const splitHolidayConstraints = constraints.filter(
+            c => c.type === "holidaySplit"
+        );
+        if (ans && splitHolidayConstraints.length > 0) {
+            const groups = _.concat(
+                ...splitHolidayConstraints.map(c => c.groups)
+            );
+            if (!uc.userInGroups(ans.user, groups)) {
+                holidays = [];
+            }
+        }
         if (
             ans &&
             isHoliday(ans.date, ans.user.location, holidays) ===
@@ -100,7 +118,8 @@ const getPossibleUsers = (
             shift,
             day,
             sofar,
-            holidays
+            holidays,
+            constraints
         );
         if (previousschedule) {
             possible = [previousschedule.user];

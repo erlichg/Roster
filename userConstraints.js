@@ -158,6 +158,11 @@ const getLastYearHoliday = (day, holiday, holidays) =>
             holidays[m].find(h => h.id === holiday.id)
     );
 
+const isHoliday = (day, location, holidays) =>
+    holidays[moment(day).format("D/M/Y")] &&
+    holidays[moment(day).format("D/M/Y")].filter(h => h.location === location)
+        .length > 0;
+
 module.exports = {
     getAllSchedulesInRangeByDay,
     getSchedulesInMoment,
@@ -371,6 +376,76 @@ module.exports = {
                                     problem.holiday.id
                                 } 2 years in a row<br>`
                         )}`
+                    );
+                }
+            }
+        },
+        holidaySplit: {
+            label: "Split shift on holidays (i.e. different user)",
+            description:
+                "This constraint maintains that a shift is split between 2 users on days with holiday",
+            isValidOn: async (m, groups, schedules) => {
+                const _schedules =
+                    schedules || (await getAllSchedulesInRangeByDay(m, db));
+                const holidays = await getHolidays();
+                const events = await db.find("Events", {
+                    date: {
+                        $gte: getBegin(),
+                        $lte: getEnd()
+                    }
+                });
+                events.filter(e => e.type === "Holiday").forEach(e => {
+                    if (!holidays[moment(e.date).format("D/M/Y")]) {
+                        holidays[moment(e.date).format("D/M/Y")] = [];
+                    }
+                    holidays[moment(e.date).format("D/M/Y")].push(e);
+                });
+                const shifts = {};
+                Object.keys(_schedules).forEach(day => {
+                    _schedules[day].forEach(schedule => {
+                        if (!(schedule.shift._id.toString() in shifts)) {
+                            shifts[schedule.shift._id.toString()] = [];
+                        }
+                        shifts[schedule.shift._id.toString()].push(schedule);
+                    });
+                });
+                const problems = [];
+                Object.keys(shifts).forEach(id => {
+                    shifts[id] = shifts[id].sort(
+                        (a, b) => moment(a.date) - moment(b.date)
+                    );
+                    for (let i = 0; i < shifts[id].length - 1; i += 1) {
+                        const schedule = shifts[id][i];
+                        const nextschedule = shifts[id][i + 1];
+                        if (
+                            schedule.user._id.toString() ===
+                                nextschedule.user._id.toString() &&
+                            isHoliday(
+                                schedule.date,
+                                schedule.user.location,
+                                holidays
+                            ) !==
+                                isHoliday(
+                                    nextschedule.date,
+                                    nextschedule.user.location,
+                                    holidays
+                                )
+                        ) {
+                            problems.push(
+                                `User ${
+                                    schedule.user.name
+                                } has a shift on ${moment(schedule.date).format(
+                                    "D/M"
+                                )} and ${moment(nextschedule.date).format(
+                                    "D/M"
+                                )} while one of them is a holiday<br>`
+                            );
+                        }
+                    }
+                });
+                if (problems.length > 0) {
+                    throw Error(
+                        `Following issues found:<br>${problems.join("")}`
                     );
                 }
             }
