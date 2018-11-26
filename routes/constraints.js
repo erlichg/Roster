@@ -406,7 +406,7 @@ router.post("/autopopulate", async (req, res, next) => {
         }
     });
     const constraints = await db.find("Constraints", { enabled: true });
-    const users = _.shuffle(await db.find("Users")); // shuffle to return different possibility each time
+    const users = _.shuffle(await db.find("Users", { enabled: true })); // shuffle to return different possibility each time
     const shifts = await db.find(
         "Shifts",
         {

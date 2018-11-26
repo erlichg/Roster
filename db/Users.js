@@ -22,6 +22,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         enum: ["Israel", "US", "China"],
         default: "Israel"
+    },
+    enabled: {
+        type: Boolean,
+        default: true
     }
 });
 const Users = mongoose.model("User", UserSchema);

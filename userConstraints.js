@@ -8,6 +8,7 @@ const moment = MomentRange.extendMoment(Moment);
 const getBegin = m =>
     moment
         .utc(m)
+        .subtract(4, "months")
         .startOf("month")
         .startOf("week");
 const getEnd = m =>
@@ -287,7 +288,7 @@ module.exports = {
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
                     schedules || (await getAllSchedulesInRangeByDay(m, db));
-                const users = await db.find("Users");
+                const users = await db.find("Users", { enabled: true });
                 /* eslint-disable no-restricted-syntax */
                 for (const group of groups) {
                     const susers = {};

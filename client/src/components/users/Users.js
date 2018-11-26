@@ -2,14 +2,14 @@ import React, {Component} from "react";
 import PropTypes from "prop-types";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
-import {Dropdown} from "semantic-ui-react";
+import {Checkbox, Dropdown} from "semantic-ui-react";
 import UserForm from "./UserForm";
 import _ from "lodash";
 
 class Users extends Component {
 
     render() {
-        const {showmodal, hidemodal, removeuser} = this.props;
+        const {showmodal, hidemodal, removeuser, updateuser} = this.props;
         const columns = [
             {
                 Header: "Name",
@@ -31,6 +31,20 @@ class Users extends Component {
             }, {
                 Header: "Location",
                 accessor: "location"
+            }, {
+                Header: "Enabled",
+                accessor: "",
+                Cell: row => {
+                    const {_id, enabled} = row.value;
+                    return <Checkbox
+                        toggle
+                        defaultChecked={enabled}
+                        onChange={e => {
+                        updateuser(_id, {
+                            enabled: !enabled
+                        });
+                    }}/>;
+                }
             }, {
                 Header: "",
                 accessor: "",
