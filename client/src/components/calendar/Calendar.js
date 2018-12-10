@@ -50,7 +50,7 @@ class Calendar extends PureComponent {
                         moment={m}
                         className={m.month() !== moment.month()
                         ? "out"
-                        : m.isSame(_moment().startOf('day'))
+                        : m.isSame(_moment.utc().startOf('day'))
                             ? "today"
                             : ""}
                         />))}

@@ -121,15 +121,19 @@ const removeById = (collection, id, populate) =>
  */
 const add = (collection, data, populate) =>
     new Promise((resolve, reject) => {
-        new tables[collection](data).save((err, o) => {
-            if (err) {
-                console.error(err);
-                reject(err);
-            }
-            findById(collection, o._id, populate)
-                .then(obj => resolve(obj))
-                .catch(errr => reject(errr));
-        });
+        if (data._id) {
+            updateById(collection, data._id, data, populate);
+        } else {
+            new tables[collection](data).save((err, o) => {
+                if (err) {
+                    console.error(err);
+                    reject(err);
+                }
+                findById(collection, o._id, populate)
+                    .then(obj => resolve(obj))
+                    .catch(errr => reject(errr));
+            });
+        }
     });
 
 module.exports = {
