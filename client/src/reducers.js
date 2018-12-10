@@ -55,7 +55,14 @@ export const reducer = handleActions({
     [addobject]: (state, action) => ({
         ...state,
         [action.payload.type]: action.success
-            ? [
+            ? 
+            Array.isArray(action.result) ? 
+            [
+                ...state[action.payload.type],
+                ...action.result
+            ]
+            :
+            [
                 ...state[action.payload.type],
                 action.result
             ]
@@ -132,7 +139,8 @@ export const reducer = handleActions({
     }),
     [setmoment]: (state, action) => ({
         ...state,
-        moment: action.payload
+        moment: action.payload,
+        constraintsresults: {}
     }),
     [getconstrainttypes]: (state, action) => ({
         ...state,

@@ -22,10 +22,10 @@ class Schedules extends Component {
     }
 
     componentDidUpdate() {
-        const {constraints, constraintsresults, checkconstraint} = this.props;
+        const {constraints, constraintsresults, checkconstraint, moment} = this.props;
         constraints
             .filter(c => c.enabled && !constraintsresults[c._id])
-            .forEach(c => checkconstraint(c._id));
+            .forEach(c => checkconstraint(c._id, moment));
     }
 
     render() {

@@ -123,6 +123,27 @@ const add = (collection, data, populate) =>
     new Promise((resolve, reject) => {
         if (data._id) {
             updateById(collection, data._id, data, populate);
+        } else if (Array.isArray(data)) {
+            tables[collection].insertMany(
+                data.filter(o => !o._id),
+                (err, docs) => {
+                    if (err) {
+                        console.error(err);
+                        reject(err);
+                    }
+                    const ans = [];
+                    docs.forEach(o => {
+                        findById(collection, o._id, populate)
+                            .then(obj => {
+                                ans.push(obj);
+                                if (ans.length === docs.length) {
+                                    resolve(ans);
+                                }
+                            })
+                            .catch(errr => reject(errr));
+                    });
+                }
+            );
         } else {
             new tables[collection](data).save((err, o) => {
                 if (err) {

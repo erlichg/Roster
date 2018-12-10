@@ -444,16 +444,7 @@ router.post("/autopopulate", async (req, res, next) => {
             new Date()
         );
         if (ans) {
-            return res.json(
-                _.xorBy(
-                    _.flatMap(copy),
-                    ans,
-                    a =>
-                        `${a.shift._id.toString()}_${moment(a.date).format(
-                            "D/M/Y"
-                        )}`
-                )
-            );
+            return res.json(ans.filter(o => copy[o.date].length === 0));
         }
         return res.status(505).send("No match found");
     } catch (err) {

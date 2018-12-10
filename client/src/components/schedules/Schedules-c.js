@@ -15,12 +15,12 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    checkconstraint: id => dispatch(checkconstraint(id)),
+    checkconstraint: (id, m) => dispatch(checkconstraint(id, m)),
     getconstraints: () => dispatch(getobjects("constraints")),
     autopopulate: m => dispatch(autopopulate(m)),
     clearpotentialschedules: () => dispatch(clearpotentialschedules()),
     applypotentialschedules: potentialschedules => {
-        potentialschedules.forEach(s=>dispatch(addobject("schedules", s)));
+        dispatch(addobject("schedules", potentialschedules));
         dispatch(clearpotentialschedules());
     },
 });
