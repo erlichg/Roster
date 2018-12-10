@@ -61,7 +61,7 @@ class Day extends Component {
         if (!isadmin) { /* If regular user, can only add/delete vacation*/
             if (Object.keys(event).length>0) {
                 removeevent(event._id);
-            } else if (!events[moment] || !events[moment].find(e=>e.type==="Unavailability" && e.user._id.toString() === user._id.toString())) { /*Only if no vacation already*/
+            } else if (!events[moment.format("D/M/Y")] || !events[moment.format("D/M/Y")].find(e=>e.type==="Unavailability" && e.user._id.toString() === user._id.toString())) { /*Only if no vacation already*/
                 addevent({user: user._id.toString(), type: "Unavailability", date: moment});
             }
             return;
@@ -99,9 +99,9 @@ class Day extends Component {
                 if (Object.keys(event).length>0) { /*Edit, so we need to remove first*/
                     removeevent(event._id);
                 }
-                if (events[moment] && data.type === "Unavailability" && events[moment].find(e=>e.type==="Unavailability" && e.user._id.toString() === data.user)) {
+                if (events[moment.format("D/M/Y")] && data.type === "Unavailability" && events[moment.format("D/M/Y")].find(e=>e.type==="Unavailability" && e.user._id.toString() === data.user)) {
                     /* We already have a vaction for this user on this date */
-                } else if (events[moment] && data.type === "Holiday" && events[moment].find(e=>e.type==="Holiday" && e.name === data.name)) { 
+                } else if (events[moment.format("D/M/Y")] && data.type === "Holiday" && events[moment.format("D/M/Y")].find(e=>e.type==="Holiday" && e.name === data.name)) { 
                     /* We already have a holiday with same name on this date */
                 } else {
                     addevent({...data, date: moment, id: data.name});
