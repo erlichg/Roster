@@ -45,7 +45,8 @@ class App extends Component {
                             <Menu.Item as={Nav} to={'/'}>
                                 <img src={logo} className="App-logo" alt="logo"/>XtremIO Roster
                             </Menu.Item>
-                            {["schedules", "constraints", "users", "groups", "shifts"].map(s => <Menu.Item key={s} name={s} as={Nav} to={`/${s}`}/>)}
+                            <Menu.Item as={Nav} name="Schedules" to={'/schedules'}/>
+                            {isadmin ? ["constraints", "users", "groups", "shifts"].map(s => <Menu.Item key={s} name={s} as={Nav} to={`/${s}`}/>) : null}
                             <Menu.Menu position='right'>
                             {unread > 0 ? <Label data-place="bottom" data-tip="You have unread messages" color='red' floating>{unread}</Label> : null}
                             <Dropdown item text={user.name}>

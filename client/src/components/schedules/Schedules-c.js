@@ -12,6 +12,7 @@ const mapStateToProps = state => ({
     constraints: state.constraints,
     constraintsresults: state.constraintsresults,
     busy: state.busy,
+    isadmin: state.user.role.name === 'Admin',
 });
 
 const mapDispatchToProps = dispatch => ({

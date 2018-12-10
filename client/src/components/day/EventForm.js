@@ -25,7 +25,7 @@ class EventForm extends React.PureComponent {
             updateref = () => {},
         } = this.props;
         return (
-            <F ref={e => updateref(e)} submit={() => submit(this.state)} validate={() => this.state.type && ((this.state.type==="Holiday" && this.state.name && this.state.location) || (this.state.type==="Vacation" && this.state.user))}>
+            <F ref={e => updateref(e)} submit={() => submit(this.state)} validate={() => this.state.type && ((this.state.type==="Holiday" && this.state.name && this.state.location) || (this.state.type==="Unavailability" && this.state.user))}>
             <Form.Dropdown
                 onChange={this.handleChange}
                 name="type"
@@ -35,10 +35,10 @@ class EventForm extends React.PureComponent {
                 label="Type"
                 required
                 validate="true"
-                options={[{text: "Holiday", value: "Holiday"}, {text: "Vacation", value: "Vacation"}]}
+                options={[{text: "Holiday", value: "Holiday"}, {text: "Unavailability", value: "Unavailability"}]}
                 defaultValue={this.state.type}
             />
-            {this.state.type==="Vacation" ? 
+            {this.state.type==="Unavailability" ? 
             <Form.Dropdown
                 onChange={this.handleChange}
                 name="user"

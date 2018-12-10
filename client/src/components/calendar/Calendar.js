@@ -62,7 +62,7 @@ class Calendar extends PureComponent {
 Calendar.propTypes = {
     onrangechange: PropTypes.func,
     moment: PropTypes.any.isRequired,
-    setmoment: PropTypes.func.isRequired
+    setmoment: PropTypes.func.isRequired,
 };
 
 export default Calendar;

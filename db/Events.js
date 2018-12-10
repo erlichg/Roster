@@ -7,7 +7,7 @@ const EventsSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        default: "Vacation"
+        default: "Unavailability"
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,

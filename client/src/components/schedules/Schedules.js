@@ -41,6 +41,7 @@ class Schedules extends Component {
             clearpotentialschedules,
             applypotentialschedules,
             busy,
+            isadmin
         } = this.props;
         const begin = _moment(moment).startOf('month').startOf('week');
         const end = _moment(moment).endOf('month').endOf('week');
@@ -48,7 +49,7 @@ class Schedules extends Component {
         return (
             <div id="schedules">
             <Dimmer active={busy}><Loader/></Dimmer>
-                <div id="users">
+                <div id="users" hidden={!isadmin}>
                     <h3>User list</h3>
                     {groups.map(g => <div key={g._id}>
                         <h5>{g.name}</h5>
@@ -163,6 +164,7 @@ Schedules.propTypes = {
     clearpotentialschedules: PropTypes.func.isRequired,
     applypotentialschedules: PropTypes.func.isRequired,
     busy: PropTypes.bool.isRequired,
+    isadmin: PropTypes.bool.isRequired,
 };
 
 export default DragDropContext(HTML5Backend)(Schedules);

@@ -148,18 +148,18 @@ const getPossibleUsers = (
     );
 
     // filter users that are on vacation today
-    const notOnVacationConstraints = constraints.filter(
-        c => c.type === "notOnVacation"
+    const notOnUnavailabilityConstraints = constraints.filter(
+        c => c.type === "notOnUnavailability"
     );
-    if (notOnVacationConstraints.length > 0) {
-        const groups = _.concat(...notOnVacationConstraints.map(c => c.groups));
+    if (notOnUnavailabilityConstraints.length > 0) {
+        const groups = _.concat(...notOnUnavailabilityConstraints.map(c => c.groups));
         // filter list of users to those that either don't belong in constraint groups or don't have any event today
         possible = possible.filter(
             u =>
                 !uc.userInGroups(u, groups) ||
                 !events.find(
                     e =>
-                        e.type === "Vacation" &&
+                        e.type === "Unavailability" &&
                         moment(e.date).isSame(day) &&
                         e.user._id.toString() === u._id.toString()
                 )

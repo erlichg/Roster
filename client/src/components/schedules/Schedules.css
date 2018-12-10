@@ -40,6 +40,8 @@
 
 #schedules .calendar {
     flex-basis: 85%;
+    flex-grow: 1;
+    padding-left: 10px;
 }
 
 #schedules .item.ok {

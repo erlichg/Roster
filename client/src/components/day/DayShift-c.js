@@ -5,6 +5,7 @@ import DayShift from "./DayShift";
 const mapStateToProps = state => ({
     events: state.events,
     schedules: state.schedules,
+    isadmin: state.user.role.name === 'Admin',
 });
 
 const mapDispatchToProps = dispatch => ({

@@ -174,8 +174,8 @@ module.exports = {
     getLastYearHoliday,
     getHolidaySchedulesAtMomentByHoliday,
     constraints: db => ({
-        notOnVacation: {
-            label: "Not On Vacation",
+        notOnUnavailability: {
+            label: "Not On Unavailability",
             description:
                 "This constraint maintains that a user cannot have a shift if he is on vacation",
             isValidOn: async (m, groups, schedules) => {
@@ -188,7 +188,7 @@ module.exports = {
                             if (
                                 (events[day] || []).find(
                                     e =>
-                                        e.type === "Vacation" &&
+                                        e.type === "Unavailability" &&
                                         e.user._id.toString() ===
                                             schedule.user.toString()
                                 )

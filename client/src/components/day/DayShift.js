@@ -57,12 +57,12 @@ class DayShift extends Component {
         }
         if ((this
             .props
-            .events[this.props.moment] || []).filter(e=>e.type==="Vacation").length===0) { /* No vacations today */
+            .events[this.props.moment] || []).filter(e=>e.type==="Unavailability").length===0) { /* No vacations today */
                 return true;
          }
         return !(this
             .props
-            .events[this.props.moment] || []).filter(e=>e.type==="Vacation")
+            .events[this.props.moment] || []).filter(e=>e.type==="Unavailability")
             .find(e => e.user._id === actual.user._id); /* Check wether schedule user has a vacation today */
     }
 
@@ -74,7 +74,7 @@ class DayShift extends Component {
             .filter(m => this.props.shift.days.indexOf(m.day()) >= 0);
         return this.props.shift.group /*This shift has a group*/
         && item.groups.map(g => g._id).indexOf(this.props.shift.group._id) !== -1 /*The user belongs to the shift group*/
-        && !shiftdays.find(day=>this.props.events[day] && this.props.events[day].filter(e=>e.type==="Vacation") && this.props.events[day].filter(e=>e.type==="Vacation").find(e=>e.user._id===item._id)) /*User does not have vacation in shift days*/
+        && !shiftdays.find(day=>this.props.events[day] && this.props.events[day].filter(e=>e.type==="Unavailability") && this.props.events[day].filter(e=>e.type==="Unavailability").find(e=>e.user._id===item._id)) /*User does not have vacation in shift days*/
     }
 
     render() {
@@ -88,6 +88,7 @@ class DayShift extends Component {
             removeschedule,
             showmodal,
             hidemodal,
+            isadmin,
         } = this.props;
         return <Droppable
             onDrop={user => {
@@ -173,7 +174,7 @@ class DayShift extends Component {
                     {schedule
                         ? schedule.user.name
                         : "Empty"}
-                    {schedule
+                    {schedule && isadmin
                         ? <Icon
                                 name="trash"
                                 className="delete"
@@ -230,6 +231,7 @@ DayShift.propTypes = {
     schedule: PropTypes.object,
     moment: PropTypes.any.isRequired,
     events: PropTypes.object.isRequired,
+    isadmin: PropTypes.bool.isRequired,
 };
 
 export default DayShift;
