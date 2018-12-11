@@ -76,9 +76,11 @@ app.get("/ical", (req, res) => {
             ical({
                 domain: "emc.com",
                 events: schedules.map(s => ({
-                    start: moment(s.date).startOf("day"),
-                    end: moment(s.date).endOf("day"),
+                    start: moment(s.date),
+                    end: moment(s.date),
                     timestamp: moment(),
+                    timezone: "Asia/Tel_Aviv",
+                    allDay: true,
                     summary: `${s.user.name}: ${s.shift.name}`
                 }))
             }).toString()
