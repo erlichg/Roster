@@ -72,18 +72,41 @@ app.use("/loggeduser", (req, res) => {
 });
 app.get("/ical", (req, res) => {
     db.find("Schedules", {}, ["shift", "user"]).then(schedules => {
+        const merged = [];
+        for (const s of schedules) {
+            const date = s.date;
+            const summary = `${s.user.name}: ${s.shift.name}`;
+            const existing = merged.find(
+                e =>
+                    e.summary === summary &&
+                    moment(e.end)
+                        .add(1, "day")
+                        .isSame(moment(date))
+            );
+            if (existing) {
+                existing.end = date;
+            } else {
+                merged.push({
+                    start: date,
+                    end: date,
+                    summary
+                });
+            }
+        }
         res.send(
             ical({
                 domain: "emc.com",
-                events: schedules.map(s => ({
-                    start: moment(s.date),
-                    end: moment(s.date),
+                events: merged.map(s => ({
+                    start: moment(s.start),
+                    end: moment(s.end),
                     timestamp: moment(),
                     timezone: "Asia/Tel_Aviv",
                     allDay: true,
-                    summary: `${s.user.name}: ${s.shift.name}`
+                    summary: s.summary
                 }))
-            }).toString()
+            })
+                .ttl(60 * 60)
+                .toString()
         );
     });
 });
