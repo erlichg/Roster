@@ -80,15 +80,14 @@ app.get("/ical", (req, res) => {
                 e =>
                     e.summary === summary &&
                     moment(e.end)
-                        .add(1, "day")
                         .isSame(moment(date))
             );
             if (existing) {
-                existing.end = date;
+                existing.end = moment(date).add(1, 'day');
             } else {
                 merged.push({
                     start: date,
-                    end: date,
+                    end: moment(date).add(1, 'day'),
                     summary
                 });
             }
