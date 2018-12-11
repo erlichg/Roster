@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import {Tab} from 'semantic-ui-react';
 import UserForm from "../users/UserForm";
 import "./Profile.css";
-import Calendar from "../calendar/Calendar-c";
 import Messages from "../messages/Messages-c";
 
 class Profile extends React.Component {
@@ -15,13 +14,6 @@ class Profile extends React.Component {
                 render: () => (
                     <Tab.Pane attached={false}>
                         <UserForm groups={groups} user={user} roles={roles} readOnly/>
-                    </Tab.Pane>
-                )
-            }, {
-                menuItem: 'VACATION',
-                render: () => (
-                    <Tab.Pane attached={false}>
-                        <Calendar/>
                     </Tab.Pane>
                 )
             }, {
