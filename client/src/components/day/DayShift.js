@@ -89,6 +89,7 @@ class DayShift extends Component {
             showmodal,
             hidemodal,
             isadmin,
+            user,
         } = this.props;
         return <Droppable
             onDrop={user => {
@@ -156,10 +157,10 @@ class DayShift extends Component {
                 return <span
                     id={moment}
                     style={{
-                    backgroundColor: schedule
-                        ? shift.color
-                        : 'lightgray'
-                }}
+                        backgroundColor: schedule
+                            ? shift.color
+                            : 'lightgray'
+                    }}
                     onMouseEnter={() => this.toggleHover(true)}
                     onMouseLeave={() => this.toggleHover(false)}
                     data-html={true}
@@ -171,9 +172,15 @@ class DayShift extends Component {
                         ? shift.group.name
                         : 'Unassigned'}`}
                     className={"dayshift_" + moment.week() + "_" + shift._id + " dayshift" + dropClass}>
-                    {schedule
-                        ? schedule.user.name
-                        : "Empty"}
+                        <label
+                        style={{backgroundColor: schedule && schedule.user._id.toString() === user._id.toString()
+                            ? '#FFFF00'
+                            : 'none'
+                        }}>
+                            {schedule
+                            ? schedule.user.name
+                            : "Empty"}
+                        </label>
                     {schedule && isadmin
                         ? <Icon
                                 name="trash"
@@ -232,6 +239,7 @@ DayShift.propTypes = {
     moment: PropTypes.any.isRequired,
     events: PropTypes.object.isRequired,
     isadmin: PropTypes.bool.isRequired,
+    user: PropTypes.object.isRequired,
 };
 
 export default DayShift;

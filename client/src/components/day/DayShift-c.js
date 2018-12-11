@@ -6,6 +6,7 @@ const mapStateToProps = state => ({
     events: state.events,
     schedules: state.schedules,
     isadmin: state.user.role.name === 'Admin',
+    user: state.user,
 });
 
 const mapDispatchToProps = dispatch => ({

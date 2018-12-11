@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {Card} from 'semantic-ui-react';
+import {Card, List} from 'semantic-ui-react';
 import moment from "moment";
 
 const WEEKS_TO_CHECK = 5;
@@ -34,6 +34,11 @@ class Home extends React.Component {
             }
         }
         return true;
+    }
+
+    getMySchedules = () => {
+        const {schedules, user} = this.props;
+        return schedules.filter(s=>moment(s.date).isBetween(moment(), moment().add(WEEKS_TO_CHECK, 'weeks'), undefined, "[]") && s.user._id.toString() === user._id.toString());
     }
 
     newMessages = () => {
@@ -98,7 +103,7 @@ class Home extends React.Component {
                             pathname: "/profile",
                             state: {
                                 user,
-                                tab: 2
+                                tab: 1
                             }
                         })}
                         color={newMessages
@@ -112,6 +117,25 @@ class Home extends React.Component {
                             <Card.Description>{newMessages
                                     ? "You have new messages"
                                     : "No new messages"}</Card.Description>
+                        </Card.Content>
+                    </Card>
+                    <Card>
+                        <Card.Content>
+                            <Card.Header>Upcoming shifts</Card.Header>
+                            <Card.Meta>Shifts</Card.Meta>
+                            <Card.Description>
+                                <List>
+                                    {this.getMySchedules().map(s=>{
+                                        return (
+                                            <List.Item>
+                                                <List.Content>
+                                                    {moment(s.date).format("dddd D/M/Y")}
+                                                </List.Content>
+                                            </List.Item>
+                                        );
+                                    })}
+                                </List>
+                            </Card.Description>
                         </Card.Content>
                     </Card>
                 </Card.Group>
