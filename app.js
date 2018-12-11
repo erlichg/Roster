@@ -10,6 +10,8 @@ const passport = require("passport/lib");
 const compression = require("compression");
 const flash = require("flash");
 const mongoose = require("mongoose");
+const ical = require("ical-generator");
+const moment = require("moment");
 const config = require("./config");
 const loginRouter = require("./routes/login");
 const logoutRouter = require("./routes/logout");
@@ -67,6 +69,21 @@ app.use("/loggeduser", (req, res) => {
     } else {
         res.status(500).end();
     }
+});
+app.get("/ical", (req, res) => {
+    db.find("Schedules", {}, ["shift", "user"]).then(schedules => {
+        res.send(
+            ical({
+                domain: "emc.com",
+                events: schedules.map(s => ({
+                    start: moment(s.date).startOf("day"),
+                    end: moment(s.date).endOf("day"),
+                    timestamp: moment(),
+                    summary: `${s.user.name}: ${s.shift.name}`
+                }))
+            }).toString()
+        );
+    });
 });
 app.use("/api", indexRouter);
 app.use("/api/users", usersRouter);
