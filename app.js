@@ -73,25 +73,24 @@ app.use("/loggeduser", (req, res) => {
 app.get("/ical", (req, res) => {
     db.find("Schedules", {}, ["shift", "user"]).then(schedules => {
         const merged = [];
+        /* eslint-disable no-restricted-syntax */
         for (const s of schedules) {
             const date = s.date;
             const summary = `${s.user.name}: ${s.shift.name}`;
             const existing = merged.find(
-                e =>
-                    e.summary === summary &&
-                    moment(e.end)
-                        .isSame(moment(date))
+                e => e.summary === summary && moment(e.end).isSame(moment(date))
             );
             if (existing) {
-                existing.end = moment(date).add(1, 'day');
+                existing.end = moment(date).add(1, "day");
             } else {
                 merged.push({
                     start: date,
-                    end: moment(date).add(1, 'day'),
+                    end: moment(date).add(1, "day"),
                     summary
                 });
             }
         }
+        /* eslint-enable */
         res.send(
             ical({
                 domain: "emc.com",
