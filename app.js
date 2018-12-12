@@ -74,7 +74,9 @@ app.get("/ical", (req, res) => {
     db.find("Schedules", {}, ["shift", "user"]).then(schedules => {
         const merged = [];
         /* eslint-disable no-restricted-syntax */
-        for (const s of schedules) {
+        for (const s of schedules.sort(
+            (a, b) => moment(a.date) - moment(b.date)
+        )) {
             const date = s.date;
             const summary = `${s.user.name}: ${s.shift.name}`;
             const existing = merged.find(
