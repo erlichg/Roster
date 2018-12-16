@@ -38,7 +38,7 @@ class Home extends React.Component {
 
     getMySchedules = () => {
         const {schedules, user} = this.props;
-        return schedules.filter(s=>moment(s.date).isBetween(moment(), moment().add(WEEKS_TO_CHECK, 'weeks'), undefined, "[]") && s.user._id.toString() === user._id.toString());
+        return schedules.filter(s=>moment(s.date).isBetween(moment(), moment().add(WEEKS_TO_CHECK * 2, 'weeks'), undefined, "[]") && s.user._id.toString() === user._id.toString());
     }
 
     newMessages = () => {
@@ -125,7 +125,7 @@ class Home extends React.Component {
                             <Card.Meta>Shifts</Card.Meta>
                             <Card.Description>
                                 <List>
-                                    {this.getMySchedules().map(s=>{
+                                    {this.getMySchedules().sort((a, b) => moment(a.date) - moment(b.date)).map(s=>{
                                         return (
                                             <List.Item>
                                                 <List.Content>
