@@ -1,46 +1,53 @@
 import React, {Component} from "react";
 import PropTypes from "prop-types";
 import {Label} from "semantic-ui-react";
-import _ from "lodash";
 import DayShift from "./DayShift-c";
 import DayEvent from "./DayEvent-c";
 import "./Day.css";
 import EventForm from "./EventForm";
 import _moment from "moment";
+import equal from "deep-equal";
 
 class Day extends Component {
-    render() {
+    
+    shouldComponentUpdate(nextProps, nextState) {
+        // if (this.props.schedule.length === nextProps.schedule.length && this.props.events.length === nextProps.events.length) {
+            if (equal(this.props.schedules, nextProps.schedules) && equal(this.props.events, nextProps.events)) {
+                return false;
+            }
+        // }
+        return true;
+    }
+
+    render() {        
         const {
             moment,
             schedules,
-            potentialschedules,
             shifts,
             holidays,
             events,
             className,
             isadmin,
         } = this.props;
-        const _schedules = _.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isSame(moment));
+        // console.info(`start day ${moment.format("D/M/Y")} render ${_moment().valueOf()}`);
         const _shifts = shifts.filter(s => s.enabled && s.days.indexOf(moment.day()) >= 0);
-        return (
+        const ans =  (
             <div className={"day "+className} key={moment}>
-                <Label data-tip="Click to add event" className="add" fluid="true" corner='left' icon='plus' onClick={()=>{
+                <Label data-tip={isadmin ? "Click to add event" : "Click to add unavailability"} className="add" fluid="true" corner='left' icon='plus' onClick={()=>{
                     this.addEditEvent();
                 }}/>
                 <div className="top">
                     <h5 style={{marginLeft: '15px'}}>{moment.format("D/M")}</h5>
                     {_shifts.map(s =>
                         <DayShift key={s._id} moment={moment} shift={s} 
-                        schedule={_schedules.filter(sc => sc.shift._id === s._id)[0]} 
+                        schedule={schedules.filter(sc => sc.shift._id === s._id)[0]} 
                         />
                     )}
                 </div>
                 <div className="bottom">
-                    {events[moment.format("D/M/Y")] && events[moment.format("D/M/Y")].filter(e=>e.type==="Unavailability")
-                        ? events[moment.format("D/M/Y")].filter(e=>e.type==="Unavailability").map(e => <DayEvent key={e._id} event={e}/>)
-                        : null}
-                    {[...(holidays[moment.format("D/M/Y")] || []), ...(events[moment.format("D/M/Y")] || []).filter(e=>e.type==="Holiday")]
-                        ? [...(holidays[moment.format("D/M/Y")] || []), ...(events[moment.format("D/M/Y")] || []).filter(e=>e.type==="Holiday")].map(h => {
+                    {events.filter(e=>e.type==="Unavailability").map(e => <DayEvent key={e._id} event={e}/>)}
+                    {[...(holidays[moment.format("D/M/Y")] || []), ...events.filter(e=>e.type==="Holiday")]
+                        ? [...(holidays[moment.format("D/M/Y")] || []), ...events.filter(e=>e.type==="Holiday")].map(h => {
                         if (isadmin && h.type && h.type==="Holiday") { /* Only admin can modify holidays*/
                             return <h6 key={h.name} className="userholiday" onClick={() => {
                                 this.addEditEvent(h);
@@ -54,6 +61,8 @@ class Day extends Component {
             </div>
 
         );
+        // console.info(`end day ${moment.format("D/M/Y")} render ${_moment().valueOf()}`);
+        return ans;
     }
 
     addEditEvent = (event = {}) => {
@@ -61,7 +70,7 @@ class Day extends Component {
         if (!isadmin) { /* If regular user, can only add/delete vacation*/
             if (Object.keys(event).length>0) {
                 removeevent(event._id);
-            } else if (!events[moment.format("D/M/Y")] || !events[moment.format("D/M/Y")].find(e=>e.type==="Unavailability" && e.user._id.toString() === user._id.toString())) { /*Only if no vacation already*/
+            } else if (!events.find(e=>e.type==="Unavailability" && e.user._id.toString() === user._id.toString())) { /*Only if no vacation already*/
                 addevent({user: user._id.toString(), type: "Unavailability", date: moment});
             }
             return;
@@ -99,9 +108,9 @@ class Day extends Component {
                 if (Object.keys(event).length>0) { /*Edit, so we need to remove first*/
                     removeevent(event._id);
                 }
-                if (events[moment.format("D/M/Y")] && data.type === "Unavailability" && events[moment.format("D/M/Y")].find(e=>e.type==="Unavailability" && e.user._id.toString() === data.user)) {
+                if (data.type === "Unavailability" && events.find(e=>e.type==="Unavailability" && e.user._id.toString() === data.user)) {
                     /* We already have a vaction for this user on this date */
-                } else if (events[moment.format("D/M/Y")] && data.type === "Holiday" && events[moment.format("D/M/Y")].find(e=>e.type==="Holiday" && e.name === data.name)) { 
+                } else if (data.type === "Holiday" && events.find(e=>e.type==="Holiday" && e.name === data.name)) { 
                     /* We already have a holiday with same name on this date */
                 } else {
                     addevent({...data, date: moment, id: data.name});
@@ -118,10 +127,9 @@ Day.propTypes = {
     isadmin: PropTypes.bool.isRequired,
     schedules: PropTypes.array.isRequired,
     users: PropTypes.array.isRequired,
-    potentialschedules: PropTypes.array.isRequired,
     shifts: PropTypes.array.isRequired,
     holidays: PropTypes.object.isRequired,
-    events: PropTypes.object.isRequired,
+    events: PropTypes.array.isRequired,
     addevent: PropTypes.func.isRequired,
     removeevent: PropTypes.func.isRequired,
     className: PropTypes.string.isRequired,

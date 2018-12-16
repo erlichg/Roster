@@ -21,6 +21,7 @@ import {
     clearpotentialschedules,
     seterror,
 } from "./actions";
+import { stat } from 'fs';
 
 export const defaultState = {
     counter: 0,
@@ -126,7 +127,9 @@ export const reducer = handleActions({
                 .payload
                 .post(state.events, action.result)
             : state.events,
-        constraintsresults: {}
+        constraintsresults: action.success
+        ? {}
+        : state.constraintsresults
     }),
     [removeevent]: (state, action) => ({
         ...state,
@@ -135,7 +138,9 @@ export const reducer = handleActions({
                 .payload
                 .post(state.events, action.result)
             : state.events,
-        constraintsresults: {}
+        constraintsresults: action.success
+        ? {}
+        : state.constraintsresults
     }),
     [setmoment]: (state, action) => ({
         ...state,
@@ -155,7 +160,10 @@ export const reducer = handleActions({
                 ...state.constraintsresults,
                 [action.payload.id]: action.result
             }
-            : state.constraintsresults
+            : {
+                ...state.constraintsresults,
+                [action.payload.id]: undefined
+            }
     }),
     [autopopulate]: (state, action) => ({
         ...state,
@@ -190,7 +198,7 @@ function fetchWithTimeout( url, options, timeout ) {
 // Middleware method to post/get data from server It runs anytime you dispatch
 // an action with payload.async=true. Be aware the action gets called before and
 // after the middleware so expect an empty result in the action
-export const asyncActionsMiddleware = store => next => action => {
+export const asyncActionsMiddleware = store => next => action => {    
     const isActionAsync = action.payload.async;
     if (!isActionAsync) {
         return next(action);
@@ -206,10 +214,12 @@ export const asyncActionsMiddleware = store => next => action => {
     if (data) {
         options.body = JSON.stringify(data);
     }
+    // console.info(`start asyncActionsMiddleware ${url} ${moment().valueOf()}`);
     fetch(url, options)
         .then(ans => new Promise((resolve, reject) => ans.ok ? resolve(ans) : ans.text().then(text => reject({message: text})))) /* if ans is ok (status between 200 and 300) than continue, otherwise get text and reject */
         .then(resultsObj => resultsObj.json())
         .then(json => {
+            // console.info(`end fetch asyncActionsMiddleware ${url} ${moment().valueOf()}`);
             next({
                 ...action,
                 result: json,

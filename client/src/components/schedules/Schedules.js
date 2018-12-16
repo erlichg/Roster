@@ -21,14 +21,15 @@ class Schedules extends Component {
             .getconstraints();
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps) {
         const {constraints, constraintsresults, checkconstraint, moment} = this.props;
         constraints
-            .filter(c => c.enabled && !constraintsresults[c._id])
+            .filter(c => c.enabled && !(c._id in constraintsresults))
             .forEach(c => checkconstraint(c._id, moment));
     }
 
     render() {
+        // console.info(`start schedules render ${Moment().valueOf()}`);
         const {
             schedules,
             potentialschedules,
@@ -46,7 +47,7 @@ class Schedules extends Component {
         const begin = _moment(moment).startOf('month').startOf('week');
         const end = _moment(moment).endOf('month').endOf('week');
         const _schedules =_.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isBetween(begin, end, "()"));
-        return (
+        const ans = (
             <div id="schedules">
             <Dimmer active={busy}><Loader/></Dimmer>
                 <div id="users" hidden={!isadmin}>
@@ -147,6 +148,8 @@ class Schedules extends Component {
                 </div>
             </div>
         );
+        // console.info(`end schedules render ${Moment().valueOf()}`);
+        return ans;
     }
 }
 Schedules.propTypes = {

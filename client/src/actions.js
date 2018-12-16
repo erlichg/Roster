@@ -87,9 +87,12 @@ export const {
         data,
         method: "post",
         post: (events, event) => {
+            // console.info(`start post addevent ${moment().valueOf()}`);
             const m = moment(event.date).startOf('day');
             const arr = events[m.format("D/M/Y")] || [];
-            return {...events, [m.format("D/M/Y")]:[...arr, event]};
+            const ans = {...events, [m.format("D/M/Y")]:[...arr, event]};
+            // console.info(`end post addevent ${moment().valueOf()}`);
+            return ans;
         }
     }),
     REMOVEEVENT: id => ({
@@ -98,8 +101,11 @@ export const {
         url: "/api/events/" + id,
         method: "delete",
         post: (events, event) => {
+            // console.info(`start post removeevent ${moment().valueOf()}`);
             const m = moment(event.date).startOf('day');
-            return {...events, [m.format("D/M/Y")]:events[m.format("D/M/Y")].filter(e=>e._id!==event._id)};
+            const ans = {...events, [m.format("D/M/Y")]:events[m.format("D/M/Y")].filter(e=>e._id!==event._id)};
+            // console.info(`start post removeevent ${moment().valueOf()}`);
+            return ans;
         }
     }),
     SETMOMENT: m => m,
