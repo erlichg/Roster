@@ -62,7 +62,7 @@ class App extends Component {
                                         {unread > 0 ? <Label data-place="bottom" data-tip="You have unread messages" color='red' circular>{unread}</Label> : null}
                                     </Dropdown.Item>                             
                                     {user.email === 'guy.erlich@emc.com' ? <Dropdown.Item>
-                                        <Input ref={e=>this.user=e} action={{ content: 'Change', onClick: this.changeUser }} placeholder='User name' />
+                                        <Input onClick={e => e.stopPropagation()} ref={e=>this.user=e} action={{ content: 'Change', onClick: this.changeUser }} placeholder='User name' />
                                     </Dropdown.Item> : null}
                                     <Dropdown.Divider/>
                                     <Dropdown.Item href={'/logout'}>Logout</Dropdown.Item>

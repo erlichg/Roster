@@ -127,7 +127,7 @@ class Home extends React.Component {
                                 <List>
                                     {this.getMySchedules().sort((a, b) => moment(a.date) - moment(b.date)).map(s=>{
                                         return (
-                                            <List.Item>
+                                            <List.Item key={s._id}>
                                                 <List.Content>
                                                     {moment(s.date).format("dddd D/M/Y")}
                                                 </List.Content>
