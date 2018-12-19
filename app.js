@@ -6,6 +6,8 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const session = require("express-session");
+const RedisStore = require("connect-redis")(session);
+const redis = require("redis");
 const passport = require("passport/lib");
 const compression = require("compression");
 const flash = require("flash");
@@ -26,12 +28,25 @@ const ConstraintsRouter = require("./routes/constraints");
 const MessagesRouter = require("./routes/Messages");
 const db = require("./db/db");
 
+const client = redis.createClient();
 const dev = process.env.env === "DEVELOPMENT";
 const app = express();
 
 app.use(logger("dev"));
 app.use(compression());
-app.use(session({ secret: "cats", resave: false, saveUninitialized: false }));
+// app.use(session({ secret: "cats", resave: false, saveUninitialized: false }));
+app.use(
+    session({
+        store: new RedisStore({
+            host: "localhost",
+            port: 6379,
+            client,
+            ttl: 260
+        }),
+        secret: "keyboard cat",
+        resave: false
+    })
+);
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(bodyParser.urlencoded({ limit: "20mb", extended: false }));
 app.use(cookieParser());
