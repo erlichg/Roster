@@ -1,15 +1,12 @@
 extends layout
 
 block content
-  for message in flash
-    a.alert(class='alert-' + message.type)
-      p= message.message
   .main.container(style="text-align: center;")
     h1.form-heading XtremIO Roster Application
     .login-form
       .main-div
         .panel
-          p Log In using CORP credentials
+          p Log In
         form(id="Login" method='POST' action='/login')
           .form-group
             input.form-control(type='text' id='username' placeholder='User name' name='username')
