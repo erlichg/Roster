@@ -14,7 +14,7 @@ router.post("/", (req, res) => {
         username: `CORP\\${req.body.username}`,
         password: req.body.password
     };
-    console.debug(`Trying to connect to ldap with: ${c}`);
+    console.debug(`Trying to connect to ldap with: ${JSON.stringify(c)}`);
     const ad = new ActiveDirectory(c);
     ad.authenticate(c.username, c.password, (err, auth) => {
         if (err) {
