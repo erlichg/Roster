@@ -14,7 +14,6 @@ router.post("/", (req, res) => {
         username: `CORP\\${req.body.username}`,
         password: req.body.password
     };
-    console.debug(`Trying to connect to ldap with: ${JSON.stringify(c)}`);
     const ad = new ActiveDirectory(c);
     ad.authenticate(c.username, c.password, (err, auth) => {
         if (err) {
@@ -28,7 +27,6 @@ router.post("/", (req, res) => {
             req.flash("error", error);
             return res.redirect("/login");
         }
-        console.debug("Authenticated. Searching for user...");
         return ad.findUser(req.body.username, (err2, user) => {
             if (err2) {
                 const error = `ERROR: ${JSON.stringify(err2)}`;
@@ -39,7 +37,6 @@ router.post("/", (req, res) => {
                 );
                 return res.redirect("/login");
             }
-            console.debug("Found. Logging in...");
             return req.logIn(user, err3 => {
                 if (err3) {
                     const error = `ERROR: ${JSON.stringify(err3)}`;

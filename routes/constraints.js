@@ -152,7 +152,9 @@ const getPossibleUsers = (
         c => c.type === "notOnUnavailability"
     );
     if (notOnUnavailabilityConstraints.length > 0) {
-        const groups = _.concat(...notOnUnavailabilityConstraints.map(c => c.groups));
+        const groups = _.concat(
+            ...notOnUnavailabilityConstraints.map(c => c.groups)
+        );
         // filter list of users to those that either don't belong in constraint groups or don't have any event today
         possible = possible.filter(
             u =>
@@ -444,7 +446,16 @@ router.post("/autopopulate", async (req, res, next) => {
             new Date()
         );
         if (ans) {
-            return res.json(ans.filter(o => copy[o.date].length === 0));
+            return res.json(
+                ans.filter(
+                    o =>
+                        !copy[o.date].find(
+                            s =>
+                                s.shift._id.toString() ===
+                                o.shift._id.toString()
+                        )
+                )
+            );
         }
         return res.status(505).send("No match found");
     } catch (err) {
