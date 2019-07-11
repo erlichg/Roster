@@ -107,11 +107,15 @@ const getPossibleUsers = (
     schedules,
     lastyearholidayschedules
 ) => {
-    let possible = users.filter(u => u.groups.indexOf(shift.group._id) !== -1);
+    let possible = users.filter(u => u.groups.indexOf(shift.group._id) !== -1); // All possible users for this shifts group
+    if (possible.length === 0) {
+        return [];
+    }
     const exists = schedules.find(
         sc => sc.shift._id.toString() === shift._id.toString()
     );
     if (exists) {
+        // A schedule already exists for this shift so we need to choose the same user
         possible = [exists.user];
     } else {
         const previousschedule = getPreviousScheduleThisWeek(
@@ -122,10 +126,14 @@ const getPossibleUsers = (
             constraints
         );
         if (previousschedule) {
+            // A schedule already exists for this shift previously this week
             possible = [previousschedule.user];
         }
     }
 
+    // ************** Start filtering the users *************************
+
+    // Filter users who already have a shift this week other than this one
     const notSameWeekConstraints = constraints.filter(
         c => c.type === "notSameWeek"
     );
@@ -138,6 +146,9 @@ const getPossibleUsers = (
                 previoususers.indexOf(u._id.toString()) === -1
         );
     }
+    if (possible.length === 0) {
+        return [];
+    }
 
     // filter users that already have a schedule today
     const todayusers = (sofar[day] || []).map(schedule =>
@@ -146,6 +157,9 @@ const getPossibleUsers = (
     possible = possible.filter(
         u => todayusers.indexOf(u._id.toString()) === -1
     );
+    if (possible.length === 0) {
+        return [];
+    }
 
     // filter users that are on vacation today
     const notOnUnavailabilityConstraints = constraints.filter(
@@ -166,6 +180,9 @@ const getPossibleUsers = (
                         e.user._id.toString() === u._id.toString()
                 )
         );
+    }
+    if (possible.length === 0) {
+        return [];
     }
 
     // filter users that were in same holiday last year (if today is a holiday)
@@ -209,8 +226,11 @@ const getPossibleUsers = (
                     )
         );
     }
+    if (possible.length === 0) {
+        return [];
+    }
 
-    // filter users that were last week
+    // filter users that were in a shift last week
     const notConsecutiveWeekConstraints = constraints.filter(
         c => c.type === "notConsecutiveWeek"
     );
@@ -243,6 +263,40 @@ const getPossibleUsers = (
             u => userslastweek.indexOf(u._id.toString()) === -1
         );
     }
+    if (possible.length === 0) {
+        return [];
+    }
+
+    // Check fairness of sofar (i.e. all schedules suggested up to now)
+    const leastUsedUserConstraints = constraints.filter(
+        c => c.type === "leastUsedUser"
+    );
+    if (leastUsedUserConstraints.length > 0) {
+        const groups = _.concat(...leastUsedUserConstraints.map(c => c.groups));
+        const histogram = _.flatMap(sofar)
+            .filter(schedule => uc.userInGroups(schedule.user, groups))
+            .reduce((map, schedule) => {
+                if (!map[schedule.user._id.toString()]) {
+                    map[schedule.user._id.toString()] = 0;
+                }
+                map[schedule.user._id.toString()] += schedule.shift.weight;
+                return map;
+            }, {});
+        users.filter(u => uc.userInGroups(u, groups)).forEach(u => {
+            if (!histogram[u._id.toString()]) {
+                histogram[u._id.toString()] = 0;
+            }
+        });
+        if (
+            _.max(Object.values(histogram)) - _.min(Object.values(histogram)) >=
+            10
+        ) {
+            // We have more than 10 score difference between "most busy" and "least busy" users. Stop this recursion immediately
+            return [];
+        }
+    }
+
+    // Create histogram of all possible users in order to sort them by the shifts they've done
     const histogram = possible.reduce((map, user) => {
         map[user._id.toString()] = 0;
         return map;
@@ -261,6 +315,8 @@ const getPossibleUsers = (
         .map(id => possible.find(u => u._id.toString() === id));
 };
 
+// This is the recursive method that advances shift by shift, day by day and calculates all possible users.
+// Once it reaches the last day, it performs final filtering and returns a result
 const rec = (
     day,
     sofar,
@@ -275,9 +331,12 @@ const rec = (
     end,
     start
 ) => {
-    if (new Date().getTime() - start.getTime() > 10000) {
-        throw new TimeoutError();
-    }
+    console.log(`Day ${  moment(day).format("D/M/Y")}`);
+    // Limit the calculation to 10s. More than that is possibly a too big calculation to complete in a reasonable time
+    // if (new Date().getTime() - start.getTime() > 10000) {
+    //     throw new TimeoutError();
+    // }
+    // Get first shift for this day that hasn't been filled already
     const shift = shifts.filter(
         s =>
             s.days.indexOf(day.day()) !== -1 &&
@@ -286,10 +345,12 @@ const rec = (
             ).length === 0
     )[0];
     if (!shift) {
+        // No free shift today?
         if (moment(day).isSame(end)) {
             // we've reached the end of the month
             return sofar;
         }
+        // Possibly no shift today or filled all shifts so move on to the next
         return rec(
             moment(day).add(1, "days"),
             sofar,
@@ -343,42 +404,9 @@ const rec = (
             start
         );
         if (p) {
+            // This user works
             if (moment(day).isSame(end)) {
                 // we are at last day and we have a positive possibility
-                // need to check final constraint - fairness
-                const leastUsedUserConstraints = constraints.filter(
-                    c => c.type === "leastUsedUser"
-                );
-                if (leastUsedUserConstraints.length > 0) {
-                    const groups = _.concat(
-                        ...leastUsedUserConstraints.map(c => c.groups)
-                    );
-                    const histogram = _.flatMap(p)
-                        .filter(schedule =>
-                            uc.userInGroups(schedule.user, groups)
-                        )
-                        .reduce((map, schedule) => {
-                            if (!map[schedule.user._id.toString()]) {
-                                map[schedule.user._id.toString()] = 0;
-                            }
-                            map[schedule.user._id.toString()] +=
-                                schedule.shift.weight;
-                            return map;
-                        }, {});
-                    users.filter(u => uc.userInGroups(u, groups)).forEach(u => {
-                        if (!histogram[u._id.toString()]) {
-                            histogram[u._id.toString()] = 0;
-                        }
-                    });
-                    if (
-                        _.max(Object.values(histogram)) -
-                            _.min(Object.values(histogram)) <
-                        7
-                    ) {
-                        return _.flatMap(p);
-                    }
-                    return undefined;
-                }
                 return _.flatMap(p);
             }
             return p;
