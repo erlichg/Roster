@@ -19,7 +19,7 @@ class Modal extends React.Component {
                 open={modal}
                 onClose={hidemodal}
                 closeOnDimmerClick={false}
-                size='small'>
+                size={modaloptions.size || 'small'}>
                 <Header>{modaloptions.title}</Header>
                 <M.Content
                     children={typeof(modaloptions.message) === 'function'

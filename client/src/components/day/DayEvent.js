@@ -10,6 +10,8 @@ class DayEvent extends PureComponent {
             removeevent,
             user,
             isadmin,
+            showmodal,
+            hidemodal,
         } = this.props;
         return (
             <div className="dayevent">
@@ -18,13 +20,33 @@ class DayEvent extends PureComponent {
                     if (!isadmin && (!event.user || event.user._id !== user._id)) {/*Removing someone elses event is not allowed*/
                         return;
                     }
-                    removeevent(event._id);
+                    showmodal({
+                        title: "Delete?",
+                        message: "Are you sure you want to delete this event?",
+                        size: 'mini',
+                        buttons: [
+                            {
+                                label: 'Cancel',
+                                className: 'negative',
+                                callback: hidemodal
+                            }, 
+                            {
+                                label: 'OK',
+                                className: 'positive',
+                                callback: () => {
+                                    removeevent(event._id);
+                                    hidemodal();
+                                }
+                            }
+                        ],
+                    });
+                    
                 }}
                     style={{
                     backgroundColor: 'cornflowerblue',
-                    cursor: event.user && event.user._id === user._id ? 'pointer' : 'default'
+                    cursor: event.user && (isadmin || event.user._id === user._id) ? 'pointer' : 'default'
                 }}>
-                {`${event.type} ${event.user ? '('+event.user.name+')' : ''}`}
+                <label style={{padding: 3}}>{`${event.type} ${event.user ? '('+event.user.name+')' : ''}`}</label>
                 {isadmin || (event.user && event.user._id === user._id)/*Only show delete icon if it's your own event*/
                         ? <FontAwesomeIcon icon="trash-alt" className="delete"/>
                         : null

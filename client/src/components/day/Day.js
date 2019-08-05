@@ -1,11 +1,10 @@
 import React, {Component} from "react";
 import PropTypes from "prop-types";
-import {Label} from "semantic-ui-react";
+import {Label, Header, Button, Popup, Grid} from "semantic-ui-react";
 import DayShift from "./DayShift-c";
 import DayEvent from "./DayEvent-c";
 import "./Day.css";
 import EventForm from "./EventForm";
-import _moment from "moment";
 import equal from "deep-equal";
 
 class Day extends Component {
@@ -31,6 +30,7 @@ class Day extends Component {
         } = this.props;
         // console.info(`start day ${moment.format("D/M/Y")} render ${_moment().valueOf()}`);
         const _shifts = shifts.filter(s => s.enabled && s.days.indexOf(moment.day()) >= 0);
+        const _unavailabilities = events.filter(e=>e.type==="Unavailability");
         const ans =  (
             <div className={"day "+className} key={moment}>
                 <Label data-tip={isadmin ? "Click to add event" : "Click to add unavailability"} className="add" fluid="true" corner='left' icon='plus' onClick={()=>{
@@ -45,15 +45,20 @@ class Day extends Component {
                     )}
                 </div>
                 <div className="bottom">
-                    {events.filter(e=>e.type==="Unavailability").map(e => <DayEvent key={e._id} event={e}/>)}
+                    {_unavailabilities.length > 0 ?
+                    <Popup style={{padding: 3}} trigger={<Button>{_unavailabilities.length + " Unavailabilities"}</Button>} flowing hoverable>
+                        <Popup.Content>
+                            {_unavailabilities.map(e => <DayEvent key={e._id} event={e}/>)}
+                        </Popup.Content>
+                    </Popup> : null}
                     {[...(holidays[moment.format("D/M/Y")] || []), ...events.filter(e=>e.type==="Holiday")]
                         ? [...(holidays[moment.format("D/M/Y")] || []), ...events.filter(e=>e.type==="Holiday")].map(h => {
                         if (isadmin && h.type && h.type==="Holiday") { /* Only admin can modify holidays*/
-                            return <h6 key={h.name} className="userholiday" onClick={() => {
+                            return <h4 key={h.name} className="userholiday" onClick={() => {
                                 this.addEditEvent(h);
-                            }}>{h.name}</h6>
+                            }}>{h.name}</h4>
                         } else {
-                            return <h6 key={h.name} className="holiday">{h.name}</h6>
+                            return <h4 key={h.name} className="holiday">{h.name}</h4>
                         }
                     })
                         : null}
