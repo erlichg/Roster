@@ -44,7 +44,7 @@ class Schedules extends Component {
             busy,
             isadmin
         } = this.props;
-        const begin = _moment(moment).startOf('month').startOf('week');
+        const begin = _moment(moment).subtract(3, 'months').startOf('month').startOf('week');
         const end = _moment(moment).endOf('month').endOf('week');
         const _schedules =_.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isBetween(begin, end, "()"));
         const ans = (
@@ -69,7 +69,7 @@ class Schedules extends Component {
                                                     : '1'
                                             }}>{u.name}</label>
                                             <div className="userschedulecontainer">
-                                                <Label circular>
+                                                <Label circular data-tip="Score of user based on shifts for this and previous 3 months">
                                                 {_schedules
                                                     .filter(s => s.user && s.user._id === u._id)
                                                     .map(s =>s.shift.weight).reduce((acc, i) => acc+i, 0)}

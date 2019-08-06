@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import PropTypes from "prop-types";
-import {Icon} from 'semantic-ui-react';
+import {Icon, Label} from 'semantic-ui-react';
 import Moment from 'moment';
 import {extendMoment} from 'moment-range';
 import _Droppable from "../dragndrop/Droppable";
@@ -172,15 +172,15 @@ class DayShift extends Component {
                         ? shift.group.name
                         : 'Unassigned'}`}
                     className={"dayshift_" + moment.week() + "_" + shift._id + " dayshift" + dropClass}>
-                        <label
-                        style={{backgroundColor: schedule && schedule.user._id.toString() === user._id.toString()
-                            ? '#FFFF00'
-                            : 'none'
-                        }}>
+                        <Label basic
+                        color={schedule && schedule.user._id.toString() === user._id.toString()
+                            ? 'yellow'
+                            : 'black'
+                        }>
                             {schedule
                             ? schedule.user.name
                             : "Empty"}
-                        </label>
+                        </Label>
                     {schedule && isadmin
                         ? <Icon
                                 name="trash"

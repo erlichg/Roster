@@ -1,7 +1,5 @@
 .day {
-    flex-basis: 14.28%; /* seven per row */
     height: 150px;
-    border: 1px solid black;
     position: relative;
     display: flex;
     justify-content: space-between;

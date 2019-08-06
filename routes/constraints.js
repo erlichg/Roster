@@ -105,7 +105,7 @@ const getPossibleUsers = (
     events,
     holidays,
     schedules,
-    lastyearholidayschedules
+    lastyearholidayschedules,
 ) => {
     let possible = users.filter(u => u.groups.indexOf(shift.group._id) !== -1); // All possible users for this shifts group
     if (possible.length === 0) {
@@ -131,9 +131,8 @@ const getPossibleUsers = (
         }
     }
 
-    // ************** Start filtering the users *************************
-
-    // Filter users who already have a shift this week other than this one
+    // ************** Start filtering the users ************************* Filter
+    // users who already have a shift this week other than this one
     const notSameWeekConstraints = constraints.filter(
         c => c.type === "notSameWeek"
     );
@@ -147,6 +146,7 @@ const getPossibleUsers = (
         );
     }
     if (possible.length === 0) {
+        console.log(`Fell on not same week`);
         return [];
     }
 
@@ -169,7 +169,8 @@ const getPossibleUsers = (
         const groups = _.concat(
             ...notOnUnavailabilityConstraints.map(c => c.groups)
         );
-        // filter list of users to those that either don't belong in constraint groups or don't have any event today
+        // filter list of users to those that either don't belong in constraint groups
+        // or don't have any event today
         possible = possible.filter(
             u =>
                 !uc.userInGroups(u, groups) ||
@@ -182,6 +183,7 @@ const getPossibleUsers = (
         );
     }
     if (possible.length === 0) {
+        console.log(`Fell on unavailability`);
         return [];
     }
 
@@ -227,6 +229,7 @@ const getPossibleUsers = (
         );
     }
     if (possible.length === 0) {
+        console.log(`Fell on consecutive holiday`);
         return [];
     }
 
@@ -264,6 +267,7 @@ const getPossibleUsers = (
         );
     }
     if (possible.length === 0) {
+        console.log(`Fell on consecutive week`);
         return [];
     }
 
@@ -273,30 +277,63 @@ const getPossibleUsers = (
     );
     if (leastUsedUserConstraints.length > 0) {
         const groups = _.concat(...leastUsedUserConstraints.map(c => c.groups));
-        const histogram = _.flatMap(sofar)
-            .filter(schedule => uc.userInGroups(schedule.user, groups))
-            .reduce((map, schedule) => {
-                if (!map[schedule.user._id.toString()]) {
-                    map[schedule.user._id.toString()] = 0;
+        for (const group of groups) {
+            let histogram = _.flatMap(sofar)
+                .filter(schedule => uc.userInGroups(schedule.user, [group]))                
+                .reduce((map, schedule) => {
+                    if (!map[schedule.user.name]) {
+                        map[schedule.user.name] = 0;
+                    }
+                    map[schedule.user.name] += schedule.shift.weight;
+                    return map;
+                }, {});
+            users.filter(u => uc.userInGroups(u, [group])).forEach(u => {
+                if (!histogram[u.name]) {
+                    histogram[u.name] = 0;
                 }
-                map[schedule.user._id.toString()] += schedule.shift.weight;
-                return map;
-            }, {});
-        users.filter(u => uc.userInGroups(u, groups)).forEach(u => {
-            if (!histogram[u._id.toString()]) {
-                histogram[u._id.toString()] = 0;
+            });
+            if (
+                _.max(Object.values(histogram)) -
+                    _.min(Object.values(histogram)) >=
+                16
+            ) {
+                // We have more than 10 score difference between "most busy" and "least busy"
+                // users. Stop this recursion immediately
+                console.log(`Fell on fairness: ${JSON.stringify(histogram)}`);
+                return [];
             }
-        });
-        if (
-            _.max(Object.values(histogram)) - _.min(Object.values(histogram)) >=
-            10
-        ) {
-            // We have more than 10 score difference between "most busy" and "least busy" users. Stop this recursion immediately
-            return [];
+
+            //Try also 1 month ahead for better fairness
+            histogram = _.flatMap(sofar)
+                .filter(schedule => uc.userInGroups(schedule.user, [group]))
+                .filter(schedule => moment(schedule.date).diff(uc.getBegin(day), 'days') > 30)
+                .reduce((map, schedule) => {
+                    if (!map[schedule.user.name]) {
+                        map[schedule.user.name] = 0;
+                    }
+                    map[schedule.user.name] += schedule.shift.weight;
+                    return map;
+                }, {});
+            users.filter(u => uc.userInGroups(u, [group])).forEach(u => {
+                if (!histogram[u.name]) {
+                    histogram[u.name] = 0;
+                }
+            });
+            if (
+                _.max(Object.values(histogram)) -
+                    _.min(Object.values(histogram)) >=
+                12
+            ) {
+                // We have more than 10 score difference between "most busy" and "least busy"
+                // users. Stop this recursion immediately
+                console.log(`Fell on fairness2: ${JSON.stringify(histogram)}`);
+                return [];
+            }
         }
     }
 
-    // Create histogram of all possible users in order to sort them by the shifts they've done
+    // Create histogram of all possible users in order to sort them by the shifts
+    // they've done
     const histogram = possible.reduce((map, user) => {
         map[user._id.toString()] = 0;
         return map;
@@ -315,8 +352,9 @@ const getPossibleUsers = (
         .map(id => possible.find(u => u._id.toString() === id));
 };
 
-// This is the recursive method that advances shift by shift, day by day and calculates all possible users.
-// Once it reaches the last day, it performs final filtering and returns a result
+// This is the recursive method that advances shift by shift, day by day and
+// calculates all possible users. Once it reaches the last day, it performs
+// final filtering and returns a result
 const rec = (
     day,
     sofar,
@@ -327,15 +365,15 @@ const rec = (
     holidays,
     schedules,
     lastyearholidayschedules,
-    begin,
     end,
     start
 ) => {
-    console.log(`Day ${  moment(day).format("D/M/Y")}`);
-    // Limit the calculation to 10s. More than that is possibly a too big calculation to complete in a reasonable time
-    // if (new Date().getTime() - start.getTime() > 10000) {
-    //     throw new TimeoutError();
+    // Limit the calculation to 10s. More than that is possibly a too big
+    // calculation to complete in a reasonable time 
+    // if (new Date().getTime() - start.getTime() > 30000) {
+    //    throw new TimeoutError();
     // }
+    console.log(day.format("D/M/Y"));
     // Get first shift for this day that hasn't been filled already
     const shift = shifts.filter(
         s =>
@@ -361,7 +399,6 @@ const rec = (
             holidays,
             schedules,
             lastyearholidayschedules,
-            begin,
             end,
             start
         );
@@ -399,17 +436,12 @@ const rec = (
             holidays,
             schedules,
             lastyearholidayschedules,
-            begin,
             end,
             start
         );
         if (p) {
             // This user works
-            if (moment(day).isSame(end)) {
-                // we are at last day and we have a positive possibility
-                return _.flatMap(p);
-            }
-            return p;
+            return _.flatMap(p);
         }
     }
     /* eslint-enable */
@@ -419,7 +451,10 @@ router.get("/types", (req, res, next) => res.json(userConstraints));
 router.post("/autopopulate", async (req, res, next) => {
     const { m = moment() } = req.body;
     const allexisting = await uc.getAllSchedulesInRangeByDay(m, db); // a list by day of all schedules or exceptions if any
-    const copy = _.clone(allexisting);
+    const copy = {};
+    for(var i in allexisting) {
+        copy[moment(i).valueOf()] = allexisting[i];
+    }
     const begin = moment
         .utc(m)
         .startOf("month")
@@ -441,7 +476,9 @@ router.post("/autopopulate", async (req, res, next) => {
         "Shifts",
         {
             enabled: true,
-            group: { $exists: true }
+            group: {
+                $exists: true
+            }
         },
         ["group"]
     );
@@ -454,14 +491,14 @@ router.post("/autopopulate", async (req, res, next) => {
     });
     const lastyearholidayschedules = await uc.getHolidaySchedulesAtMomentByHoliday(
         db,
-        moment(m).subtract(1, "years"),
+        moment(end).subtract(1, "years"),
         holidays
     );
 
     try {
         const ans = rec(
             begin,
-            {},
+            allexisting,
             shifts,
             users,
             constraints,
@@ -469,15 +506,18 @@ router.post("/autopopulate", async (req, res, next) => {
             holidays,
             allexisting,
             lastyearholidayschedules,
-            begin,
             end,
             new Date()
         );
         if (ans) {
+            // Filter existing schedules
             return res.json(
                 ans.filter(
                     o =>
-                        !copy[o.date].find(
+                        Object.keys(copy).indexOf(
+                            String(moment(o.date).valueOf())
+                        ) === -1 ||
+                        !copy[String(moment(o.date).valueOf())].find(
                             s =>
                                 s.shift._id.toString() ===
                                 o.shift._id.toString()
@@ -525,7 +565,14 @@ router.post("/", (req, res, next) => {
 });
 router.put("/:id", (req, res, next) => {
     const { id } = req.params;
-    db.updateById(table, id, { $set: req.body }, populate)
+    db.updateById(
+        table,
+        id,
+        {
+            $set: req.body
+        },
+        populate
+    )
         .then(u => res.json(u))
         .catch(err => {
             console.error(err);

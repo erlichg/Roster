@@ -8,7 +8,7 @@ const moment = MomentRange.extendMoment(Moment);
 const getBegin = m =>
     moment
         .utc(m)
-        .subtract(4, "months")
+        .subtract(3, "months")
         .startOf("month")
         .startOf("week");
 const getEnd = m =>
@@ -165,6 +165,7 @@ const isHoliday = (day, location, holidays) =>
         .length > 0;
 
 module.exports = {
+    getBegin,
     getAllSchedulesInRangeByDay,
     getSchedulesInMoment,
     getScheduleDays,
@@ -254,6 +255,8 @@ module.exports = {
                 const _schedules =
                     schedules || (await getAllSchedulesInRangeByDay(m, db));
                 const users = {};
+                const holidays = await getHolidays();
+                const events = await getAllEventsInRangeByDay(m, db);
                 Object.keys(_schedules).forEach(day => {
                     _schedules[day]
                         .filter(schedule => userInGroups(schedule.user, groups))
@@ -264,21 +267,50 @@ module.exports = {
                             users[moment(schedule.date).week()].push(schedule);
                         });
                 });
+                let problems = [];
                 Object.keys(users).forEach(week => {
-                    const problems = _.uniqWith(
-                        users[week],
-                        (s1, s2) =>
-                            s1.user._id.toString() === s2.user._id.toString() &&
-                            s1.shift._id.toString() !== s2.shift._id.toString()
-                    ); /* we remove "duplicate" entries where the user is the same but shift is different */
-                    if (problems.length !== users[week].length) {
-                        throw Error(
-                            `Following users have different shifts in same weeks:<br>${problems
-                                .map(u => u.name)
-                                .join("<br>")}`
-                        );
-                    }
+                    problems = _.concat(
+                        problems,
+                        _.difference(
+                            users[week],
+                            _.uniqWith(
+                                users[week],
+                                (s1, s2) =>
+                                    s1.user._id.toString() ===
+                                        s2.user._id.toString() &&
+                                    s1.shift._id.toString() !==
+                                        s2.shift._id.toString()
+                            )
+                        ) /* we remove "duplicate" entries where the user is the same but shift is different */
+                            .filter(
+                                s =>
+                                    _.concat(
+                                        (
+                                            holidays[
+                                                moment(s.date).format("D/M/Y")
+                                            ] || []
+                                        ).filter(
+                                            h => h.location === s.user.location
+                                        ),
+                                        (events[s.date] || []).filter(
+                                            e => e.type === "Holiday"
+                                        )
+                                    ).length === 0
+                            )
+                    ); /* We remove the entries which fall on a holday */
                 });
+                if (problems.length !== 0) {
+                    throw Error(
+                        `Following users have different shifts in same weeks:<br>${problems
+                            .map(
+                                u =>
+                                    `${u.user.name} on ${moment(u.date).format(
+                                        "D/M/Y"
+                                    )}`
+                            )
+                            .join("<br>")}`
+                    );
+                }
             }
         },
         leastUsedUser: {

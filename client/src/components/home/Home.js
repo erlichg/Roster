@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import {Card, List} from 'semantic-ui-react';
 import moment from "moment";
 
-const WEEKS_TO_CHECK = 5;
+const WEEKS_TO_CHECK = 12;
 
 class Home extends React.Component {
     areShiftsFilledForNextMonth = () => {
