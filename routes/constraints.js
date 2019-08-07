@@ -20,6 +20,17 @@ class TimeoutError extends Error {
     }
 }
 
+const median = array => {
+    const sortedArray = array.sort((x, y) => x - y);
+    const halfLength = parseInt(sortedArray.length / 2);
+    if (sortedArray.length % 2 === 0) {
+        // array with even number elements
+        return (sortedArray[halfLength] + sortedArray[halfLength - 1]) / 2;
+    }
+
+    return sortedArray[halfLength]; // array with odd number elements
+};
+
 const product = arr => {
     if (arr.length === 0) {
         return [];
@@ -105,7 +116,7 @@ const getPossibleUsers = (
     events,
     holidays,
     schedules,
-    lastyearholidayschedules,
+    lastyearholidayschedules
 ) => {
     let possible = users.filter(u => u.groups.indexOf(shift.group._id) !== -1); // All possible users for this shifts group
     if (possible.length === 0) {
@@ -277,79 +288,55 @@ const getPossibleUsers = (
     );
     if (leastUsedUserConstraints.length > 0) {
         const groups = _.concat(...leastUsedUserConstraints.map(c => c.groups));
-        for (const group of groups) {
-            let histogram = _.flatMap(sofar)
-                .filter(schedule => uc.userInGroups(schedule.user, [group]))                
-                .reduce((map, schedule) => {
-                    if (!map[schedule.user.name]) {
-                        map[schedule.user.name] = 0;
-                    }
-                    map[schedule.user.name] += schedule.shift.weight;
-                    return map;
-                }, {});
-            users.filter(u => uc.userInGroups(u, [group])).forEach(u => {
-                if (!histogram[u.name]) {
-                    histogram[u.name] = 0;
+        const histogram = possible
+            .filter(u => uc.userInGroups(u, groups))
+            .reduce((map, user) => {
+                map[user._id.toString()] = 0;
+                return map;
+            }, {});
+        Object.values(sofar).forEach(d => {
+            d.forEach(schedule => {
+                const id = schedule.user._id.toString();
+                if (id in histogram) {
+                    histogram[id] += schedule.shift.weight;
                 }
             });
-            if (
-                _.max(Object.values(histogram)) -
-                    _.min(Object.values(histogram)) >=
-                16
-            ) {
-                // We have more than 10 score difference between "most busy" and "least busy"
-                // users. Stop this recursion immediately
-                console.log(`Fell on fairness: ${JSON.stringify(histogram)}`);
-                return [];
-            }
-
-            //Try also 1 month ahead for better fairness
-            histogram = _.flatMap(sofar)
-                .filter(schedule => uc.userInGroups(schedule.user, [group]))
-                .filter(schedule => moment(schedule.date).diff(uc.getBegin(day), 'days') > 30)
-                .reduce((map, schedule) => {
-                    if (!map[schedule.user.name]) {
-                        map[schedule.user.name] = 0;
-                    }
-                    map[schedule.user.name] += schedule.shift.weight;
-                    return map;
-                }, {});
-            users.filter(u => uc.userInGroups(u, [group])).forEach(u => {
-                if (!histogram[u.name]) {
-                    histogram[u.name] = 0;
-                }
-            });
-            if (
-                _.max(Object.values(histogram)) -
-                    _.min(Object.values(histogram)) >=
-                12
-            ) {
-                // We have more than 10 score difference between "most busy" and "least busy"
-                // users. Stop this recursion immediately
-                console.log(`Fell on fairness2: ${JSON.stringify(histogram)}`);
-                return [];
-            }
-        }
+        });
+        const med = median(Object.values(histogram));
+        possible = possible.filter(
+            u =>
+                !uc.userInGroups(u, groups) ||
+                histogram[u._id.toString()] <= med
+        );
     }
 
-    // Create histogram of all possible users in order to sort them by the shifts
-    // they've done
+    if (possible.length === 0) {
+        console.log(`Fell on fairness`);
+        return [];
+    }
+
+    // I want to sort all users by the weekday/weekends they've done
     const histogram = possible.reduce((map, user) => {
-        map[user._id.toString()] = 0;
+        map[user.name] = 0;
         return map;
     }, {});
-    Object.values(sofar).forEach(day => {
-        day.forEach(schedule => {
-            const id = schedule.user._id.toString();
-            const weight = schedule.shift.weight;
-            if (id in histogram) {
-                histogram[id] += weight;
+    Object.values(sofar).forEach(d => {
+        d.filter(schedule => {
+            if (day.day() < 5) {
+                // Weekday
+                return moment(schedule.date).day() < 5;
+            }
+            // Weekend
+            return moment(schedule.date).day() >= 5;
+        }).forEach(schedule => {
+            if (schedule.user.name in histogram) {
+                histogram[schedule.user.name] += 1;
             }
         });
     });
     return Object.keys(histogram)
         .sort((a, b) => histogram[a] - histogram[b])
-        .map(id => possible.find(u => u._id.toString() === id));
+        .map(name => possible.find(u => u.name === name));
 };
 
 // This is the recursive method that advances shift by shift, day by day and
@@ -369,7 +356,7 @@ const rec = (
     start
 ) => {
     // Limit the calculation to 10s. More than that is possibly a too big
-    // calculation to complete in a reasonable time 
+    // calculation to complete in a reasonable time
     // if (new Date().getTime() - start.getTime() > 30000) {
     //    throw new TimeoutError();
     // }
@@ -452,7 +439,7 @@ router.post("/autopopulate", async (req, res, next) => {
     const { m = moment() } = req.body;
     const allexisting = await uc.getAllSchedulesInRangeByDay(m, db); // a list by day of all schedules or exceptions if any
     const copy = {};
-    for(var i in allexisting) {
+    for (const i in allexisting) {
         copy[moment(i).valueOf()] = allexisting[i];
     }
     const begin = moment
