@@ -8,7 +8,7 @@ const moment = MomentRange.extendMoment(Moment);
 const getBegin = m =>
     moment
         .utc(m)
-        .subtract(3, "months")
+        .subtract(2, "months")
         .startOf("month")
         .startOf("week");
 const getEnd = m =>
@@ -208,9 +208,9 @@ module.exports = {
             }
         },
         notConsecutiveWeek: {
-            label: "Not Consecutive week",
+            label: "Not Consecutive weeks",
             description:
-                "This constraint maintains that no user has a shift 2 weeks in a row",
+                "This constraint maintains that no user has a more than 1 shift in 1 3 week duration",
             isValidOn: async (m, groups, schedules) => {
                 const _schedules =
                     schedules || (await getAllSchedulesInRangeByDay(m, db));

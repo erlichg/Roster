@@ -44,7 +44,7 @@ class Schedules extends Component {
             busy,
             isadmin
         } = this.props;
-        const begin = _moment(moment).subtract(3, 'months').startOf('month').startOf('week');
+        const begin = _moment(moment).subtract(2, 'months').startOf('month').startOf('week');
         const end = _moment(moment).endOf('month').endOf('week');
         const _schedules =_.concat(schedules, potentialschedules).filter(s => s.shift.enabled && _moment(s.date).isBetween(begin, end, "()"));
         const ans = (

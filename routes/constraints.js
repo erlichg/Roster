@@ -258,7 +258,7 @@ const getPossibleUsers = (
                     moment
                         .range(
                             moment(day)
-                                .subtract(1, "weeks")
+                                .subtract(2, "weeks")
                                 .startOf("week"),
                             moment(day)
                                 .subtract(1, "weeks")
@@ -320,6 +320,7 @@ const getPossibleUsers = (
         map[user.name] = 0;
         return map;
     }, {});
+
     Object.values(sofar).forEach(d => {
         d.filter(schedule => {
             if (day.day() < 5) {
