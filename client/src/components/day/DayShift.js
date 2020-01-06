@@ -173,9 +173,10 @@ class DayShift extends Component {
                         : 'Unassigned'}`}
                     className={"dayshift_" + moment.week() + "_" + shift._id + " dayshift" + dropClass}>
                         <Label basic
+                        
                         color={schedule && schedule.user._id.toString() === user._id.toString()
                             ? 'yellow'
-                            : 'black'
+                            : 'white'
                         }>
                             {schedule
                             ? schedule.user.name
