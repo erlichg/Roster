@@ -219,7 +219,7 @@ const getPossibleUsers = (
                         holiday =>
                             lastyearholidayschedules[holiday.id] &&
                             lastyearholidayschedules[holiday.id].find(
-                                uu => uu._id.toString() === u._id.toString()
+                                uu => uu !== null && uu._id.toString() === u._id.toString()
                             )
                     )
         );
@@ -296,9 +296,11 @@ const getPossibleUsers = (
             }, {});
         Object.values(sofar).forEach(d => {
             d.forEach(schedule => {
-                const id = schedule.user._id.toString();
-                if (id in histogram) {
-                    histogram[id] += schedule.shift.weight;
+                if (schedule.user !== null) {
+                    const id = schedule.user._id.toString();
+                    if (id in histogram) {
+                        histogram[id] += schedule.shift.weight;
+                    }
                 }
             });
         });
@@ -330,7 +332,7 @@ const getPossibleUsers = (
             // Weekend
             return moment(schedule.date).day() >= 5;
         }).forEach(schedule => {
-            if (schedule.user.name in histogram) {
+            if (schedule.user !== null && schedule.user.name in histogram) {
                 histogram[schedule.user.name] += 1;
             }
         });
