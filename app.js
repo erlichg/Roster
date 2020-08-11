@@ -29,7 +29,7 @@ const MessagesRouter = require("./routes/Messages");
 const db = require("./db/db");
 
 const client = redis.createClient();
-const dev = process.env.env === "DEVELOPMENT";
+const dev = process.env.NODE_ENV === "development";
 const app = express();
 
 app.use(logger("dev"));
@@ -70,7 +70,7 @@ app.use("/login", loginRouter);
 app.use("/logout", logoutRouter);
 app.use("/loggeduser", (req, res) => {
     if (dev || req.isAuthenticated()) {
-        const { user } = dev ? { user: { mail: "guy.erlich@emc.com" } } : req;
+        const { user } = dev ? { user: { mail: "guy.erlich@dell.com" } } : req;
         db.find("Users", { email: user.mail.toLowerCase() }, [
             "groups",
             "role"
@@ -158,7 +158,7 @@ app.use((err, req, res, next) => {
 
     // render the error page
     res.status(err.status || 500);
-    res.render("error");
+    res.render("error", {flash: [err]});
 });
 mongoose.connect(
     config.mongoURL,

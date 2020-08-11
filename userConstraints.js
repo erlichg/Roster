@@ -102,7 +102,7 @@ const getHolidaySchedulesAtMomentByHoliday = async (db, m, holidays) => {
                     ans[holiday.id] = [];
                 }
                 schedules[day]
-                    .filter(s => s.user.location === holiday.location)
+                    .filter(s => s.user !== null && s.user.location === holiday.location)
                     .forEach(s => {
                         ans[holiday.id].push(s.user);
                     });
@@ -189,7 +189,7 @@ module.exports = {
                             if (
                                 (events[day] || []).find(
                                     e =>
-                                        e.type === "Unavailability" &&
+                                        e.type === "Unavailability" && e.user !== null && e.user._id !== null && schedule.user !== null &&
                                         e.user._id.toString() ===
                                             schedule.user.toString()
                                 )
@@ -217,7 +217,7 @@ module.exports = {
                 const users = {};
                 Object.keys(_schedules).forEach(day => {
                     _schedules[day]
-                        .filter(schedule => userInGroups(schedule.user, groups))
+                        .filter(schedule => schedule.user !== null && userInGroups(schedule.user, groups))
                         .forEach(schedule => {
                             if (!users[moment(schedule.date).week()]) {
                                 users[moment(schedule.date).week()] = [];
@@ -259,7 +259,7 @@ module.exports = {
                 const events = await getAllEventsInRangeByDay(m, db);
                 Object.keys(_schedules).forEach(day => {
                     _schedules[day]
-                        .filter(schedule => userInGroups(schedule.user, groups))
+                        .filter(schedule => schedule.user !== null && userInGroups(schedule.user, groups))
                         .forEach(schedule => {
                             if (!users[moment(schedule.date).week()]) {
                                 users[moment(schedule.date).week()] = [];
@@ -290,7 +290,7 @@ module.exports = {
                                                 moment(s.date).format("D/M/Y")
                                             ] || []
                                         ).filter(
-                                            h => h.location === s.user.location
+                                            h =>s.user !== null && h.location === s.user.location
                                         ),
                                         (events[s.date] || []).filter(
                                             e => e.type === "Holiday"
@@ -326,7 +326,7 @@ module.exports = {
                     const susers = {};
                     Object.keys(_schedules).forEach(day => {
                         _schedules[day]
-                            .filter(schedule =>
+                            .filter(schedule => schedule.user !== null &&
                                 userInGroups(schedule.user, [group])
                             )
                             .forEach(schedule => {
@@ -375,7 +375,7 @@ module.exports = {
                                 (
                                     holidays[moment(day).format("D/M/Y")] || []
                                 ).filter(
-                                    h => h.location === schedule.user.location
+                                    h => schedule.user !== null && h.location === schedule.user.location
                                 ),
                                 (events[day] || []).filter(
                                     e => e.type === "Holiday"
@@ -451,7 +451,7 @@ module.exports = {
                         const schedule = shifts[id][i];
                         const nextschedule = shifts[id][i + 1];
                         if (
-                            schedule.user._id.toString() ===
+                            schedule.user !== null && nextschedule.user !== null && schedule.user._id.toString() ===
                                 nextschedule.user._id.toString() &&
                             isHoliday(
                                 schedule.date,
