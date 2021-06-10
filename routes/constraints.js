@@ -122,12 +122,14 @@ const getPossibleUsers = (
     if (possible.length === 0) {
         return [];
     }
+    console.log(`Starting with full users: ${JSON.stringify(possible.map(u => u.name))}`)
     const exists = schedules.find(
         sc => sc.shift._id.toString() === shift._id.toString()
     );
     if (exists) {
         // A schedule already exists for this shift so we need to choose the same user
         possible = [exists.user];
+        console.log(`Schedule exists so picking: ${JSON.stringify(possible.map(u => u.name))}`)
     } else {
         const previousschedule = getPreviousScheduleThisWeek(
             shift,
@@ -139,6 +141,7 @@ const getPossibleUsers = (
         if (previousschedule) {
             // A schedule already exists for this shift previously this week
             possible = [previousschedule.user];
+            console.log(`Previous schedule exists so picking: ${JSON.stringify(possible.map(u => u.name))}`)
         }
     }
 
@@ -160,7 +163,7 @@ const getPossibleUsers = (
         console.log(`Fell on not same week`);
         return [];
     }
-
+    console.log(`Remaining after notSameWeek: ${JSON.stringify(possible.map(u => u.name))}`)
     // filter users that already have a schedule today
     const todayusers = (sofar[day] || []).map(schedule =>
         schedule.user._id.toString()
@@ -171,7 +174,7 @@ const getPossibleUsers = (
     if (possible.length === 0) {
         return [];
     }
-
+    console.log(`Remaining after todayusers: ${JSON.stringify(possible.map(u => u.name))}`)
     // filter users that are on vacation today
     const notOnUnavailabilityConstraints = constraints.filter(
         c => c.type === "notOnUnavailability"
@@ -197,7 +200,7 @@ const getPossibleUsers = (
         console.log(`Fell on unavailability`);
         return [];
     }
-
+    console.log(`Remaining after notOnUnavailability: ${JSON.stringify(possible.map(u => u.name))}`)
     // filter users that were in same holiday last year (if today is a holiday)
     const notConecutiveHolidayConstraints = constraints.filter(
         c => c.type === "notConecutiveHoliday"
@@ -243,7 +246,7 @@ const getPossibleUsers = (
         console.log(`Fell on consecutive holiday`);
         return [];
     }
-
+    console.log(`Remaining after notConecutiveHoliday: ${JSON.stringify(possible.map(u => u.name))}`)
     // filter users that were in a shift last week
     const notConsecutiveWeekConstraints = constraints.filter(
         c => c.type === "notConsecutiveWeek"
@@ -281,7 +284,7 @@ const getPossibleUsers = (
         console.log(`Fell on consecutive week`);
         return [];
     }
-
+    console.log(`Remaining after notConsecutiveWeek: ${JSON.stringify(possible.map(u => u.name))}`)
     // Check fairness of sofar (i.e. all schedules suggested up to now)
     const leastUsedUserConstraints = constraints.filter(
         c => c.type === "leastUsedUser"
@@ -316,7 +319,7 @@ const getPossibleUsers = (
         console.log(`Fell on fairness`);
         return [];
     }
-
+    console.log(`Remaining after leastUsedUser: ${JSON.stringify(possible.map(u => u.name))}`)
     // I want to sort all users by the weekday/weekends they've done
     const histogram = possible.reduce((map, user) => {
         map[user.name] = 0;
@@ -324,16 +327,18 @@ const getPossibleUsers = (
     }, {});
 
     Object.values(sofar).forEach(d => {
-        d.filter(schedule => {
-            if (day.day() < 5) {
-                // Weekday
-                return moment(schedule.date).day() < 5;
-            }
-            // Weekend
-            return moment(schedule.date).day() >= 5;
-        }).forEach(schedule => {
+        d
+        // .filter(schedule => {
+        //     if (day.day() < 5) {
+        //         // Weekday
+        //         return moment(schedule.date).day() < 5;
+        //     }
+        //     // Weekend
+        //     return moment(schedule.date).day() >= 5;
+        // })
+        .forEach(schedule => {
             if (schedule.user !== null && schedule.user.name in histogram) {
-                histogram[schedule.user.name] += 1;
+                histogram[schedule.user.name] += schedule.shift.weight;
             }
         });
     });
